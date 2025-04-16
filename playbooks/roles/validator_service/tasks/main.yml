@@ -1,0 +1,35 @@
+---
+- name: Copy Flask app script
+  ansible.builtin.copy:
+    src: auth_validator.py
+    dest: "{{ validator_base_dir }}/auth_validator.py"
+    owner: "{{ validator_user }}"
+    group: "{{ validator_group }}"
+    mode: "0750"
+  notify: "restart validator service"
+
+- name: Generate and copy .env file
+  ansible.builtin.template:
+    src: env.j2
+    dest: "{{ validator_base_dir }}/.env"
+    owner: "{{ validator_user }}"
+    group: "{{ validator_group }}"
+    mode: "0600"
+  notify: "restart validator service"
+
+- name: Copy systemd service file
+  ansible.builtin.template:
+    src: auth-validator.service.j2
+    dest: "/etc/systemd/system/{{ auth_service_name }}.service"
+    mode: "0644"
+  notify: "restart validator service"
+
+- name: Reload systemd daemon
+  ansible.builtin.systemd:
+    daemon_reload: true
+
+- name: Enable and start Flask service
+  ansible.builtin.systemd:
+    name: "{{ service_name }}.service"
+    enabled: true
+    state: started

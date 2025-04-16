@@ -1,0 +1,42 @@
+---
+# Auth Validator environment variables
+aws_region: "eu-west-1"
+debug: "true"
+secret_name: "secret/nginx/auth-validator-dev"
+
+# NGINX variables
+nginx_plus: false  # Set to true to install NGINX Plus instead of open-source NGINX
+nginx_plus_license_key: ""  # Path to NGINX Plus license key file
+nginx_plus_license_cert: ""  # Path to NGINX Plus license certificate file
+dns_servers: "8.8.8.8 8.8.4.4"
+server_name: "dev-aws-ingress-validator.local"
+server_port: "443"
+
+# Backend servers configuration
+backend_servers:
+  - "localhost:8080"
+
+server_health_check: "true"
+server_health_check_path: "/health"
+
+# Self-signed certificate generation
+create_self_signed_cert: "true"
+
+# Environment name for logging and identification
+env: "development"
+
+# User and group configuration
+validator_user: "auth-validator"
+validator_group: "auth-validator"
+nginx_user: "nginx"
+nginx_group: "nginx"
+
+# Directory paths
+validator_base_dir: "/opt/auth-validator"
+validator_log_dir: "/opt/auth-validator/logs"
+nginx_cert_dir: "/etc/nginx/certs"
+nginx_pid_dir: "/run/nginx"
+
+# Python configuration
+python_venv_dir: "{{ validator_base_dir }}/venv"
+python_command: "/usr/bin/python3"

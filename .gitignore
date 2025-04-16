@@ -1,0 +1,34 @@
+# Ansible-related files
+*.retry
+.ansible/
+
+# Python-related files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.env
+*.venv
+
+# Logs and temporary files
+*.log
+*.tmp
+*.swp
+*.bak
+*.orig
+
+# System files
+.DS_Store
+Thumbs.db
+
+# VSCode settings
+.vscode/
+
+# Credentials and secrets
+*password*
+*secret*
+*credential*
+*aws_access*
+*aws_key*
+*vault*
+

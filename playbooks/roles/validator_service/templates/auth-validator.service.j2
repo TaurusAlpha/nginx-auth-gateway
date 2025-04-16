@@ -1,0 +1,19 @@
+[Unit]
+Description={{ env | capitalize }} Auth Validator Flask Service
+After=network.target
+
+[Service]
+Type=simple
+User={{ validator_user }}
+Group={{ validator_group }}
+WorkingDirectory={{ validator_base_dir }}
+ExecStart={{ python_venv_dir }}/bin/python {{ validator_base_dir }}/auth_validator.py
+EnvironmentFile={{ validator_base_dir }}/.env
+Restart=on-failure
+RestartSec=5s
+StandardOutput=append:{{ validator_log_dir }}/stdout.log
+StandardError=append:{{ validator_log_dir }}/stderr.log
+LimitNOFILE=1024
+
+[Install]
+WantedBy=multi-user.target

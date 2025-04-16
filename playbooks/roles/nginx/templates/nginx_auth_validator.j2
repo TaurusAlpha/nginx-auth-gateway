@@ -1,0 +1,102 @@
+# Backend service definition with load balancing
+upstream backend-service {
+    {% for server in backend_servers %}
+    server {{ server }} weight=5;
+    {% endfor %}
+    keepalive 16;
+}
+
+server {
+    listen {{ server_port }} ssl;
+    server_name {{ server_name }};
+
+    # App Protect configuration
+    {% if nginx_plus | bool %}
+    app_protect_enable on;
+    app_protect_policy_file "/etc/app_protect/conf/app-protect-policy.json";
+    app_protect_security_log_enable on;
+    app_protect_security_log "/var/log/app-protect/security.log" syslog:server=127.0.0.1:514;
+    {% endif %}
+
+    # SSL Certificate Configuration
+    ssl_certificate     {{ nginx_cert_dir }}/server/{{ server_name }}-fullchain.crt;
+    ssl_certificate_key {{ nginx_cert_dir }}/server/{{ server_name }}-nginx.key;
+
+    # SSL Security Configuration
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers HIGH:!aNULL:!MD5;
+
+    # Rate Limiting Configuration
+    limit_req zone=api burst=20 nodelay;
+    limit_conn apiconn 10;
+
+    # Environment identification header
+    add_header X-Environment "{{ env }}" always;
+
+    # Main API Proxy Configuration
+    location / {
+        # Request Validation
+        auth_request /auth;
+        auth_request_set $auth_status $upstream_status;
+
+        # Backend Proxy Settings
+        proxy_pass http://backend-service;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Request-ID $request_id;
+        proxy_set_header X-Environment "{{ env }}";
+
+        # Error Handling Configuration
+        error_page 401 403 = @error_handler;
+        error_page 429 = @rate_limited;
+    }
+
+    # API Validation Service Configuration
+    location = /auth {
+        internal;
+        proxy_pass http://127.0.0.1:9000/validate;
+        proxy_pass_request_body off;
+        proxy_set_header Content-Length "";
+        proxy_set_header X-Original-URI $request_uri;
+        proxy_set_header X-Original-Method $request_method;
+        proxy_set_header X-Original-Host $host;
+        proxy_set_header X-Environment "{{ env }}";
+    }
+
+    # Error Response Handler
+    location @error_handler {
+        default_type application/json;
+        return 400 '{
+            "error": "Bad Request",
+            "message": "Invalid API request",
+            "status": $auth_status,
+            "environment": "{{ env }}",
+            "timestamp": "$time_iso8601"
+        }';
+    }
+
+    # Rate Limit Response Handler
+    location @rate_limited {
+        default_type application/json;
+        return 429 '{
+            "error": "Too Many Requests",
+            "message": "API rate limit exceeded",
+            "environment": "{{ env }}",
+            "timestamp": "$time_iso8601"
+        }';
+    }
+
+    {% if server_health_check == "true" %}
+    # Health Check Endpoint
+    location {{ server_health_check_path }} {
+        access_log off;
+        return 200 '{
+            "status": "healthy",
+            "environment": "{{ env }}",
+            "server_name": "{{ server_name }}"
+        }';
+    }
+    {% endif %}
+}

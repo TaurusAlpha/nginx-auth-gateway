@@ -1,0 +1,62 @@
+---
+# Auth Validator environment variables
+aws_access_key_id: "{{ vault_aws_access_key_id }}"
+aws_secret_access_key: "{{ vault_aws_secret_access_key }}"
+# aws_access_key_id: "<CHANGE>"
+# aws_secret_access_key: "<CHANGE>"
+aws_region: "eu-west-1"
+debug: "false"
+secret_name: "secret/nginx/auth-validator"
+
+# Environment identification
+env: "prod"
+
+# NGINX variables
+# Set to true to install NGINX Plus instead of open-source NGINX
+nginx_plus: false 
+# Path to NGINX Plus license key file
+# nginx_plus_license_key: "ssl/nginx-repo.key"
+# Path to NGINX Plus license certificate file
+# nginx_plus_license_cert: "ssl/nginx-repo.crt"
+
+# NGINX variables
+dns_servers: "8.8.8.8 8.8.4.4"
+server_name: "aws-ingress-validator.local"
+server_port: "443"
+
+# Backend servers configuration
+backend_servers:
+  - "localhost:8080"
+
+# Health check configuration
+server_health_check: "false"
+server_health_check_path: "/health"
+
+# Self-signed certificate generation
+create_self_signed_cert: "true"
+
+# Optional certificate files should be uploaded to roles ssl directory
+# server_certificate_chain: "certificate_chain.crt"
+# server_certificate_key: "certificate_key.key"
+
+# User and group configuration
+validator_user: "auth-validator"
+validator_group: "auth-validator"
+nginx_user: "nginx"
+nginx_group: "nginx"
+
+# Directory paths
+validator_base_dir: "/opt/auth-validator"
+validator_log_dir: "/opt/auth-validator/logs"
+nginx_cert_dir: "/etc/nginx/certs"
+nginx_pid_dir: "/run/nginx"
+nginx_plus_license_dir: "/etc/ssl/nginx"
+nginx_plus_log_dir: "/var/log/nginx-plus"
+nginx_plus_app_protect_log_dir: "/var/log/app-protect"
+
+# Python configuration
+python_venv_dir: "{{ validator_base_dir }}/venv"
+python_command: "/usr/bin/python3"
+
+# Service names
+auth_service_name: "auth-validator"

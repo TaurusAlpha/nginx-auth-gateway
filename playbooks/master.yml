@@ -1,0 +1,29 @@
+---
+- name: Set target hosts based on environment
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    - name: Set target hosts variable
+      ansible.builtin.set_fact:
+        target_hosts: "{{ env | default('prod') }}"
+      tags: [always]
+    - name: Display target environment
+      ansible.builtin.debug:
+        msg: "Targeting environment: {{ env | default('prod') }} on hosts group: {{ target_hosts }}"
+      tags: [always]
+
+- name: Import Install Packages playbook
+  ansible.builtin.import_playbook: install_packages.yml
+  tags: [packages, setup, always]
+
+- name: Import Setup Users playbook
+  ansible.builtin.import_playbook: setup_users.yml
+  tags: [users, setup, always]
+
+- name: Import Deploy Validator playbook
+  ansible.builtin.import_playbook: deploy_validator.yml
+  tags: [validator, application]
+
+- name: Import Deploy NGINX playbook
+  ansible.builtin.import_playbook: deploy_nginx.yml
+  tags: [nginx, web]

@@ -1,0 +1,77 @@
+---
+- name: Install NGINX and Python dependencies
+  hosts: "{{ target_hosts | default(env) | default('prod') }}"
+  become: true
+
+  pre_tasks:
+    - name: Include environment-specific variables
+      ansible.builtin.include_vars: "../environments/{{ env | default('prod') }}.yml"
+      tags: [always]
+
+    - name: Display selected environment
+      ansible.builtin.debug:
+        msg: "Installing packages for {{ env | default('prod') }} environment on {{ inventory_hostname }}"
+      tags: [always]
+
+  tasks:
+    - name: Update APT cache
+      ansible.builtin.apt:
+        update_cache: true
+
+    - name: Install NGINX Plus and App Protect
+      when: nginx_plus | bool and nginx_plus_license_key != "" and nginx_plus_license_cert != ""
+      block:
+        - name: Install NGINX Plus signing key
+          ansible.builtin.apt_key:
+            url: https://nginx.org/keys/nginx_signing.key
+            state: present
+
+        - name: Add NGINX Plus repository
+          ansible.builtin.apt_repository:
+            repo: deb https://pkgs.nginx.com/plus/ubuntu focal nginx-plus
+            state: present
+            filename: nginx-plus
+            update_cache: true
+
+        - name: Add App Protect repository
+          ansible.builtin.apt_repository:
+            repo: deb https://pkgs.nginx.com/app-protect/ubuntu focal nginx-plus
+            state: present
+            filename: nginx-app-protect
+            update_cache: true
+
+        - name: Copy NGINX Plus certificate
+          ansible.builtin.copy:
+            src: "{{ nginx_plus_license_cert }}"
+            dest: /etc/ssl/nginx/nginx-repo.crt
+            mode: '0644'
+          when: nginx_plus_license_cert != ""
+
+        - name: Copy NGINX Plus key
+          ansible.builtin.copy:
+            src: "{{ nginx_plus_license_key }}"
+            dest: /etc/ssl/nginx/nginx-repo.key
+            mode: '0644'
+          when: nginx_plus_license_key != ""
+
+        - name: Install NGINX Plus and App Protect
+          ansible.builtin.apt:
+            name:
+              - nginx-plus
+              - app-protect
+            state: present
+            update_cache: true
+
+    - name: Install open source NGINX
+      ansible.builtin.apt:
+        name: nginx
+        state: present
+      when: not nginx_plus | bool
+
+    - name: Install Python packages
+      ansible.builtin.apt:
+        name:
+          - python3
+          - python3-pip
+          - python3-venv
+        state: present

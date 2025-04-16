@@ -1,0 +1,202 @@
+---
+- name: Create NGINX Plus license directory
+  ansible.builtin.file:
+    path: "{{ nginx_plus_license_dir }}"
+    state: directory
+    owner: "{{ nginx_user }}"
+    group: "{{ nginx_group }}"
+    mode: "0755"
+  when: nginx_plus | bool
+
+- name: Create NGINX Plus log directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ nginx_user }}"
+    group: "{{ nginx_group }}"
+    mode: "0755"
+  with_items:
+    - "{{ nginx_plus_log_dir }}"
+    - "{{ nginx_plus_app_protect_log_dir }}"
+  when: nginx_plus | bool
+
+- name: Ensure NGINX log directory is owned by nginx user
+  ansible.builtin.file:
+    path: "{{ nginx_plus_log_dir if nginx_plus | bool else '/var/log/nginx' }}"
+    state: directory
+    owner: "{{ nginx_user }}"
+    group: "{{ nginx_group }}"
+    mode: "0755"
+
+- name: Create pid directory for nginx
+  ansible.builtin.file:
+    path: "{{ nginx_pid_dir }}"
+    state: directory
+    owner: "{{ nginx_user }}"
+    group: "{{ nginx_group }}"
+    mode: "0755"
+
+- name: Create certificate directory
+  ansible.builtin.file:
+    path: "{{ nginx_cert_dir }}"
+    state: directory
+    owner: "{{ nginx_user }}"
+    group: "{{ nginx_group }}"
+    mode: "0755"
+
+- name: Create server certificate directory
+  ansible.builtin.file:
+    path: "{{ nginx_cert_dir }}/server"
+    state: directory
+    owner: "{{ nginx_user }}"
+    group: "{{ nginx_group }}"
+    mode: "0755"
+
+- name: Copy general NGINX configuration
+  ansible.builtin.template:
+    src: nginx.j2
+    dest: /etc/nginx/nginx.conf
+    owner: "{{ nginx_user }}"
+    group: "{{ nginx_group }}"
+    mode: "0644"
+  notify: "restart nginx service"
+
+- name: Copy NGINX server block configuration
+  ansible.builtin.template:
+    src: nginx_auth_validator.j2
+    dest: "/etc/nginx/conf.d/{{ server_name }}.conf"
+    owner: "{{ nginx_user }}"
+    group: "{{ nginx_group }}"
+    mode: "0644"
+  vars:
+    jinja2_native: true  # Ensure native Jinja2 syntax is used
+  notify: "restart nginx service"
+
+- name: Generate Root CA key
+  ansible.builtin.command: openssl genrsa -out {{ nginx_cert_dir }}/rootCA.key 2048
+  args:
+    creates: "{{ nginx_cert_dir }}/rootCA.key"
+  when: create_self_signed_cert == "true"
+
+- name: Generate Root CA certificate
+  ansible.builtin.command: >
+    openssl req -x509 -new -nodes -key {{ nginx_cert_dir }}/rootCA.key
+    -sha256 -days 1024
+    -out {{ nginx_cert_dir }}/rootCA.pem
+    -subj "/C=US/ST=California/L=San Francisco/O=My Company/OU=IT Department/CN={{ environment | capitalize }} Root CA"
+  args:
+    creates: "{{ nginx_cert_dir }}/rootCA.pem"
+  when: create_self_signed_cert == "true"
+
+- name: Generate server private key
+  ansible.builtin.command: openssl genrsa -out {{ nginx_cert_dir }}/server/{{ server_name }}-nginx.key 2048
+  args:
+    creates: "{{ nginx_cert_dir }}/server/{{ server_name }}-nginx.key"
+  when: create_self_signed_cert == "true"
+
+- name: Generate server certificate signing request (CSR)
+  ansible.builtin.command: >
+    openssl req -new -key {{ nginx_cert_dir }}/server/{{ server_name }}-nginx.key
+    -out {{ nginx_cert_dir }}/server/{{ server_name }}-nginx.csr
+    -subj "/C=US/ST=California/L=San Francisco/O=My Company/OU=IT Department/CN={{ server_name }}"
+  args:
+    creates: "{{ nginx_cert_dir }}/server/{{ server_name }}-nginx.csr"
+  when: create_self_signed_cert == "true"
+
+- name: Generate server certificate signed by Root CA
+  ansible.builtin.command: >
+    openssl x509 -req -in {{ nginx_cert_dir }}/server/{{ server_name }}-nginx.csr
+    -CA {{ nginx_cert_dir }}/rootCA.pem -CAkey {{ nginx_cert_dir }}/rootCA.key
+    -CAcreateserial -out {{ nginx_cert_dir }}/server/{{ server_name }}-fullchain.crt
+    -days 500 -sha256
+  args:
+    creates: "{{ nginx_cert_dir }}/server/{{ server_name }}-fullchain.crt"
+  when: create_self_signed_cert == "true"
+  notify: "restart nginx service"
+
+- name: Copy existing SSL certificate if not generating self-signed
+  ansible.builtin.copy:
+    src: "ssl/{{ server_certificate_chain }}"
+    dest: "{{ nginx_cert_dir }}/server/{{ server_name }}-fullchain.crt"
+    owner: "{{ nginx_user }}"
+    group: "{{ nginx_group }}"
+    mode: "0644"
+  when: create_self_signed_cert != "true"
+  notify: "restart nginx service"
+
+- name: Copy existing SSL private key if not generating self-signed
+  ansible.builtin.copy:
+    src: "ssl/{{ server_certificate_key }}"
+    dest: "{{ nginx_cert_dir }}/server/{{ server_name }}-nginx.key"
+    owner: "{{ nginx_user }}"
+    group: "{{ nginx_group }}"
+    mode: "0600"
+  when: create_self_signed_cert != "true"
+  notify: "restart nginx service"
+
+- name: Set permissions and ownership for SSL certificate files
+  ansible.builtin.find:
+    paths: "{{ nginx_cert_dir }}/server"
+    recurse: true
+    file_type: file
+  register: cert_files
+  notify: "restart nginx service"
+
+- name: Apply correct permissions to SSL certificate files
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    owner: "{{ nginx_user }}"
+    group: "{{ nginx_group }}"
+    mode: "0644"
+  with_items: "{{ cert_files.files }}"
+  notify: "restart nginx service"
+
+- name: Set restrictive permissions for private key files
+  ansible.builtin.find:
+    paths: "{{ nginx_cert_dir }}/server"
+    patterns: "*.key"
+    recurse: true
+  register: key_files
+  notify: "restart nginx service"
+
+- name: Apply restrictive permissions to private key files
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    owner: "{{ nginx_user }}"
+    group: "{{ nginx_group }}"
+    mode: "0600"
+  with_items: "{{ key_files.files }}"
+  notify: "restart nginx service"
+
+- name: Create systemd override directory for nginx
+  ansible.builtin.file:
+    path: /etc/systemd/system/nginx.service.d
+    state: directory
+    mode: "0755"
+
+- name: Create systemd override file for nginx
+  ansible.builtin.template:
+    src: nginx_override.j2
+    dest: /etc/systemd/system/nginx.service.d/override.conf
+    mode: "0644"
+  notify: "restart nginx service"
+
+- name: Copy App Protect policy file
+  ansible.builtin.copy:
+    src: app-protect-policy.json
+    dest: "/etc/app_protect/conf/app-protect-policy.json"
+    owner: "{{ nginx_user }}"
+    group: "{{ nginx_group }}"
+    mode: "0644"
+  when: nginx_plus | bool
+  notify: "restart nginx service"
+
+- name: Reload systemd daemon
+  ansible.builtin.systemd:
+    daemon_reload: true
+
+- name: Restart and enable NGINX service
+  ansible.builtin.systemd:
+    name: nginx
+    state: restarted
+    enabled: true

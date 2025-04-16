@@ -1,0 +1,124 @@
+# Main Process Configuration
+# user is set via systemd override
+worker_processes auto;
+pid {{ nginx_pid_dir }}/nginx.pid;
+# include /etc/nginx/modules-enabled/*.conf;
+
+# Events Configuration
+events {
+    worker_connections 768;
+    # multi_accept on;
+}
+
+http {
+    # Basic Settings
+    sendfile on;
+    tcp_nopush on;
+    types_hash_max_size 2048;
+    server_tokens off;
+
+    # server_names_hash_bucket_size 64;
+    # server_name_in_redirect off;
+
+    include /etc/nginx/mime.types;
+    default_type application/octet-stream;
+
+    # SSL Security Settings
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers HIGH:!aNULL:!MD5;
+    ssl_prefer_server_ciphers on;
+    ssl_session_cache shared:SSL:10m;
+    # ssl_session_timeout 1d;
+    ssl_session_tickets off;
+    ssl_stapling on;
+    ssl_stapling_verify on;
+    resolver {{ dns_servers }} valid=300s;
+    resolver_timeout 5s;
+    # HSTS Configuration
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" always;
+
+    # Logging Configuration
+    # API Gateway specific log format with additional details
+    log_format api_gateway '$remote_addr - $remote_user [$time_local] "$request" '
+    '$status $body_bytes_sent "$http_referer" '
+    '"$http_user_agent" "$http_x_forwarded_for" '
+    '$request_time $upstream_response_time $pipe '
+    '$upstream_cache_status $upstream_addr '
+    '"$http_authorization" "$request_body"';
+
+    # Use API Gateway specific log format
+    access_log {{ nginx_plus_log_dir if nginx_plus | bool else '/var/log/nginx' }}/{{ env }}_access.log api_gateway;
+    error_log {{ nginx_plus_log_dir if nginx_plus | bool else '/var/log/nginx' }}/{{ env }}_error.log warn;
+
+    # Proxy Settings
+    proxy_http_version 1.1;
+    proxy_cache_bypass $http_upgrade;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection 'upgrade';
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_set_header X-Forwarded-Host $host;
+    proxy_set_header X-Forwarded-Port $server_port;
+
+    # Proxy Timeout Settings
+    proxy_connect_timeout 60s;
+    proxy_send_timeout 60s;
+    proxy_read_timeout 60s;
+
+    # Proxy Buffer Settings
+    proxy_buffers 8 16k;
+    proxy_buffer_size 32k;
+
+    # Compression Settings
+    gzip on;
+
+    # gzip_vary on;
+    # gzip_proxied any;
+    # gzip_comp_level 6;
+    # gzip_buffers 16 8k;
+    # gzip_http_version 1.1;
+    # gzip_types text/plain text/css application/json application/javascript text/xml application/xml application/xml+rss text/javascript;
+
+    # Virtual Host Configuration
+    include /etc/nginx/conf.d/*.conf;
+    # include /etc/nginx/sites-enabled/*;
+
+    # Header Security Configuration
+    proxy_hide_header X-Powered-By;
+    proxy_hide_header Server;
+
+    # Security Headers
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-Frame-Options "DENY" always;
+    add_header X-XSS-Protection "1; mode=block" always;
+    # Modified CSP for API Gateway
+    add_header Content-Security-Policy "default-src 'none'; frame-ancestors 'none'" always;
+    add_header Referrer-Policy "no-referrer" always;
+
+    # API Request Tracking
+    add_header X-Request-ID $request_id always;
+    add_header X-Environment "{{ env }}" always;
+
+    # Rate Limiting Configuration
+    limit_req_zone $binary_remote_addr zone=api:10m rate=10r/s;
+    limit_req_status 429;
+    limit_conn_zone $binary_remote_addr zone=apiconn:10m;
+
+    # Default Rate Limiting Settings
+    limit_req zone=api burst=20 nodelay;
+    limit_conn apiconn 10;
+
+    # Buffer Size Configuration
+    client_body_buffer_size 10K;
+    client_header_buffer_size 1k;
+    client_max_body_size 10m;
+    large_client_header_buffers 2 1k;
+
+    # Connection Timeout Configuration
+    client_body_timeout 12;
+    client_header_timeout 12;
+    keepalive_timeout 15;
+    send_timeout 10;
+}

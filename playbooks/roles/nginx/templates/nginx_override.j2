@@ -1,0 +1,5 @@
+[Service]
+User={{ nginx_user }}
+Group={{ nginx_group }}
+AmbientCapabilities=CAP_NET_BIND_SERVICE
+PIDFile={{ nginx_pid_dir }}/nginx.pid

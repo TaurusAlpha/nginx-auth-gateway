@@ -1,0 +1,60 @@
+---
+- name: Deploy NGINX Service
+  hosts: "{{ target_hosts | default(env) | default('prod') }}"
+  become: true
+
+  pre_tasks:
+    - name: Include environment-specific variables
+      ansible.builtin.include_vars: "../environments/{{ env | default('prod') }}.yml"
+      tags: [always]
+
+    - name: Display selected environment
+      ansible.builtin.debug:
+        msg: "Deploying to {{ env | default('prod') }} environment on {{ inventory_hostname }}"
+      tags: [always]
+
+    - name: Ensure NGINX package is available
+      ansible.builtin.apt:
+        name: nginx
+        state: present
+      check_mode: true
+      register: nginx_check
+      failed_when: false
+
+    - name: Start validator service
+      ansible.builtin.systemd:
+        name: "{{ service_name }}.service"
+        state: started
+      tags: [always]
+
+    - name: Verify connectivity to validation service
+      ansible.builtin.uri:
+        url: http://127.0.0.1:9000/pong
+        method: GET
+        status_code: 200
+      register: validator_check
+      ignore_errors: true
+
+    - name: Display pre-deployment status
+      ansible.builtin.debug:
+        msg: "NGINX available: {{ not nginx_check.failed }}, Validator service responding: {{ not validator_check.failed }}"
+
+  roles:
+    - role: nginx
+      tags: [nginx, web, configuration]
+
+  post_tasks:
+    - name: Verify NGINX configuration
+      ansible.builtin.command: nginx -t
+      register: nginx_syntax
+      changed_when: false
+
+    - name: Verify NGINX service is running
+      ansible.builtin.service:
+        name: nginx
+        state: started
+      register: nginx_running
+
+    - name: Display deployment status
+      ansible.builtin.debug:
+        msg: "NGINX deployed successfully and running: {{ nginx_running.state == 'started' }}"

@@ -1,0 +1,6 @@
+---
+- name: Restart validator
+  ansible.builtin.systemd:
+    name: "{{ service_name }}"
+    state: restarted
+  listen: "restart validator service"

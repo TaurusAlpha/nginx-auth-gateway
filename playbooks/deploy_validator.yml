@@ -1,0 +1,76 @@
+---
+- name: Deploy Flask Validation Service
+  hosts: "{{ target_hosts | default(env) | default('prod') }}"
+  become: true
+
+  pre_tasks:
+    - name: Include environment-specific variables
+      ansible.builtin.include_vars: "../environments/{{ env | default('prod') }}.yml"
+      tags: [always]
+
+    - name: Display selected environment
+      ansible.builtin.debug:
+        msg: "Deploying to {{ env | default('prod') }} environment on {{ inventory_hostname }}"
+      tags: [always]
+
+  tasks:
+    - name: Create Flask app directory
+      ansible.builtin.file:
+        path: "{{ validator_base_dir }}"
+        state: directory
+        owner: "{{ validator_user }}"
+        group: "{{ validator_group }}"
+        mode: "0750"
+
+    - name: Create validator logs directory exists
+      ansible.builtin.file:
+        path: "{{ validator_log_dir }}"
+        state: directory
+        owner: "{{ validator_user }}"
+        group: "{{ validator_group }}"
+        mode: "0755"  # Allow write access for logs
+
+    - name: Create virtual environment
+      ansible.builtin.command: "{{ python_command }} -m venv {{ python_venv_dir }}"
+      args:
+        creates: "{{ python_venv_dir }}"
+
+    - name: Copy requirements file
+      ansible.builtin.copy:
+        src: roles/validator_service/requirements.txt
+        dest: "{{ validator_base_dir }}/requirements.txt"
+        owner: "{{ validator_user }}"
+        group: "{{ validator_group }}"
+        mode: "0644"
+
+    - name: Install Flask and boto3 in venv
+      ansible.builtin.pip:
+        requirements: "{{ validator_base_dir }}/requirements.txt"
+        virtualenv: "{{ python_venv_dir }}"
+        virtualenv_command: "{{ python_command }} -m venv"
+
+  roles:
+    - validator_service
+
+  post_tasks:
+    - name: Verify Flask service is running
+      ansible.builtin.systemd:
+        name: "{{ auth_service_name }}"
+        state: started
+      register: flask_service_status
+
+    - name: Display Flask service status
+      ansible.builtin.debug:
+        msg: "Flask service is running: {{ flask_service_status }}"
+
+    - name: Verify connectivity to validation service
+      ansible.builtin.uri:
+        url: http://127.0.0.1:9000/pong
+        method: GET
+        status_code: 200
+      register: validator_check
+      ignore_errors: true
+
+    - name: Display deployment status
+      ansible.builtin.debug:
+        msg: "Flask validator deployed successfully and running: {{ validator_check.status }}"
