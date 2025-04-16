@@ -1,3 +1,6 @@
+# Project specific files
+playbooks/roles/nginx/ssl/*
+
 # Ansible-related files
 *.retry
 .ansible/
