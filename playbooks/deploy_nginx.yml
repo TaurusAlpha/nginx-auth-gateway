@@ -17,13 +17,22 @@
       ansible.builtin.apt:
         name: nginx
         state: present
-      check_mode: true
+      when: not nginx_plus | bool
       register: nginx_check
-      failed_when: false
+
+    - name: Ensure NGINX Plus with App Protect WAF
+      ansible.builtin.apt:
+        name:
+          - nginx-plus
+          - app-protect
+        state: present
+      when: nginx_plus | bool and nginx_plus_license_key != "" and nginx_plus_license_cert != ""
+      register: nginx_plus_check
+      ignore_errors: true
 
     - name: Start validator service
       ansible.builtin.systemd:
-        name: "{{ service_name }}.service"
+        name: "{{ auth_service_name }}.service"
         state: started
       tags: [always]
 
@@ -37,7 +46,16 @@
 
     - name: Display pre-deployment status
       ansible.builtin.debug:
-        msg: "NGINX available: {{ not nginx_check.failed }}, Validator service responding: {{ not validator_check.failed }}"
+        msg: >
+            Installation check: {{
+              (nginx_plus | bool) | ternary(
+                (nginx_plus_check is defined and nginx_plus_check.rc is defined and nginx_plus_check.rc == 0),
+                (nginx_check is defined and nginx_check.rc is defined and nginx_check.rc == 0)
+              )
+            }},
+            Validator service responding: {{
+              validator_check is defined and validator_check.status is defined and validator_check.status == 200
+            }}
 
   roles:
     - role: nginx

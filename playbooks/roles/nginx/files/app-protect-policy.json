@@ -4,119 +4,36 @@
         "template": {
             "name": "POLICY_TEMPLATE_NGINX_BASE"
         },
-        "applicationLanguage": "utf-8",
         "enforcementMode": "blocking",
-        "signature-requirements": [
-            {
-                "signatureSet": {
-                    "filter": {
-                        "accuracyFilter": "all-accuracies",
-                        "riskFilter": "all-risks",
-                        "tagFilter": {
-                            "includeFilter": true,
-                            "tags": [
-                                "OWASP_TOP_10",
-                                "OWASP_2021"
-                            ]
-                        }
-                    }
-                }
-            }
-        ],
+        "applicationLanguage": "utf-8",
+        "signatureSettings": {
+            "signatureStaging": false
+        },
         "blocking-settings": {
             "violations": [
                 {
-                    "name": "VIOL_SQL_INJECTION",
-                    "alarm": true,
-                    "block": true
+                    "name": "VIOL_HTTP_PROTOCOL"
                 },
                 {
-                    "name": "VIOL_XSS",
-                    "alarm": true,
-                    "block": true
+                    "name": "VIOL_EVASION"
                 },
                 {
-                    "name": "VIOL_CSRF",
-                    "alarm": true,
-                    "block": true
+                    "name": "VIOL_MALICIOUS_FILE"
                 },
                 {
-                    "name": "VIOL_COMMAND_INJECTION",
-                    "alarm": true,
-                    "block": true
-                },
-                {
-                    "name": "VIOL_HTTP_PROTOCOL",
-                    "alarm": true,
-                    "block": true
-                },
-                {
-                    "name": "VIOL_SECURE_PASSWORD",
-                    "alarm": true,
-                    "block": true
-                },
-                {
-                    "name": "VIOL_INSECURE_DESERIALIZATION",
-                    "alarm": true,
-                    "block": true
-                },
-                {
-                    "name": "VIOL_XML_EXTERNAL_ENTITY",
-                    "alarm": true,
-                    "block": true
-                },
-                {
-                    "name": "VIOL_PARAMETER_MULTIPART_NULL",
-                    "alarm": true,
-                    "block": true
-                },
-                {
-                    "name": "VIOL_PARAMETER_VALUE_BASE64",
-                    "alarm": true,
-                    "block": true
-                },
-                {
-                    "name": "VIOL_PARAMETER_VALUE_LENGTH",
-                    "alarm": true,
-                    "block": true
-                },
-                {
-                    "name": "VIOL_FILE_UPLOAD",
-                    "alarm": true,
-                    "block": true
+                    "name": "VIOL_GENERIC_ATTACK_SIGNATURE"
                 }
+            ]
+        },
+        "signature-enforcement": {
+            "signatureSetNames": [
+                "All Signatures"
             ]
         },
         "bot-defense": {
             "settings": {
-                "isEnabled": true,
-                "mode": "blocking"
-            },
-            "mitigations": {
-                "signatures": true,
-                "anomalies": true
+                "isEnabled": false
             }
-        },
-        "file-types": [
-            {
-                "name": "json",
-                "type": "json",
-                "allowed": true,
-                "checkPostData": true,
-                "checkQueryString": true,
-                "maximumLength": 10485760
-            }
-        ],
-        "data-guard": {
-            "enabled": true,
-            "creditCards": true,
-            "ssn": true,
-            "maskData": true
-        },
-        "whitelist-ips": [],
-        "cookie-settings": {
-            "maximumCookieHeaderLength": 8192
-        },
-        "maximum-cve-level": "high"
+        }
     }
 }

@@ -15,7 +15,7 @@ server {
     app_protect_enable on;
     app_protect_policy_file "/etc/app_protect/conf/app-protect-policy.json";
     app_protect_security_log_enable on;
-    app_protect_security_log "/var/log/app-protect/security.log" syslog:server=127.0.0.1:514;
+    app_protect_security_log "/etc/app_protect/conf/log_default.json" /var/log/app_protect/security_{{ server_name }}.log;
     {% endif %}
 
     # SSL Certificate Configuration

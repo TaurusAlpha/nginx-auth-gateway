@@ -18,43 +18,110 @@
       ansible.builtin.apt:
         update_cache: true
 
-    - name: Install NGINX Plus and App Protect
+    - name: Install Python packages
+      ansible.builtin.apt:
+        name:
+          - python3
+          - python3-pip
+          - python3-venv
+          - python3-apt
+        state: present
+
+    - name: Install prerequisites for NGINX Plus
+      ansible.builtin.apt:
+        name:
+          - apt-transport-https
+          - lsb-release
+          - ca-certificates
+          - wget
+          - gnupg2
+          - ubuntu-keyring
+        state: present
+
+    - name: Install NGINX Plus and App Protect WAF
       when: nginx_plus | bool and nginx_plus_license_key != "" and nginx_plus_license_cert != ""
       block:
-        - name: Install NGINX Plus signing key
+        - name: Determine Ubuntu version codename
+          ansible.builtin.command: lsb_release -cs
+          register: ubuntu_codename
+          changed_when: false
+
+        - name: Verify supported Ubuntu version
+          ansible.builtin.assert:
+            that: ubuntu_codename.stdout in ['focal', 'jammy', 'noble']
+            msg: "Only Ubuntu 20.04 (Focal), 22.04 (Jammy), and 24.04 (Noble) are supported for NGINX App Protect WAF"
+
+        - name: Create directory for NGINX Plus license files
+          ansible.builtin.file:
+            path: /etc/ssl/nginx
+            state: directory
+            mode: '0755'
+
+        - name: NGINX Plus key
           ansible.builtin.apt_key:
-            url: https://nginx.org/keys/nginx_signing.key
+            url: https://cs.nginx.com/static/keys/nginx_signing.key
+            keyring: /usr/share/keyrings/nginx-archive-keyring.gpg
+            state: present
+
+        - name: NGINX App Protect key
+          ansible.builtin.apt_key:
+            url: https://cs.nginx.com/static/keys/app-protect-security-updates.key
+            keyring: /usr/share/keyrings/nginx-archive-keyring.gpg
             state: present
 
         - name: Add NGINX Plus repository
           ansible.builtin.apt_repository:
-            repo: deb https://pkgs.nginx.com/plus/ubuntu focal nginx-plus
+            repo: >
+              deb [signed-by=/usr/share/keyrings/nginx-archive-keyring.gpg]
+              https://pkgs.nginx.com/plus/ubuntu {{ ubuntu_codename.stdout }} nginx-plus
+            # repo: "deb https://pkgs.nginx.com/plus/ubuntu {{ ubuntu_codename.stdout }} nginx-plus"
             state: present
-            filename: nginx-plus
-            update_cache: true
+            update_cache: false
 
         - name: Add App Protect repository
           ansible.builtin.apt_repository:
-            repo: deb https://pkgs.nginx.com/app-protect/ubuntu focal nginx-plus
+            repo: >
+              deb [signed-by=/usr/share/keyrings/nginx-archive-keyring.gpg]
+              https://pkgs.nginx.com/app-protect/ubuntu {{ ubuntu_codename.stdout }} nginx-plus
             state: present
-            filename: nginx-app-protect
-            update_cache: true
+            update_cache: false
+
+        - name: Add App Protect security updates repository
+          ansible.builtin.apt_repository:
+            repo: >
+              deb [signed-by=/usr/share/keyrings/nginx-archive-keyring.gpg]
+              https://pkgs.nginx.com/app-protect-security-updates/ubuntu {{ ubuntu_codename.stdout }} nginx-plus
+            state: present
+            update_cache: false
 
         - name: Copy NGINX Plus certificate
           ansible.builtin.copy:
-            src: "{{ nginx_plus_license_cert }}"
+            src: "roles/nginx/license/{{ nginx_plus_license_cert }}"
             dest: /etc/ssl/nginx/nginx-repo.crt
             mode: '0644'
           when: nginx_plus_license_cert != ""
 
         - name: Copy NGINX Plus key
           ansible.builtin.copy:
-            src: "{{ nginx_plus_license_key }}"
+            src: "roles/nginx/license/{{ nginx_plus_license_key }}"
             dest: /etc/ssl/nginx/nginx-repo.key
             mode: '0644'
           when: nginx_plus_license_key != ""
 
-        - name: Install NGINX Plus and App Protect
+        - name: Copy NGINX Plus JWT token
+          ansible.builtin.copy:
+            src: "roles/nginx/license/{{ nginx_plus_jwt_token }}"
+            dest: /etc/ssl/nginx/license.jwt
+            mode: '0644'
+          when: nginx_plus_jwt_token != ""
+
+        - name: Download NGINX Plus apt configuration
+          ansible.builtin.get_url:
+            url: https://cs.nginx.com/static/files/90pkgs-nginx
+            dest: /etc/apt/apt.conf.d/90pkgs-nginx
+            mode: '0644'
+
+        - name: Install NGINX Plus with App Protect WAF
           ansible.builtin.apt:
             name:
               - nginx-plus
@@ -67,11 +134,3 @@
         name: nginx
         state: present
       when: not nginx_plus | bool
-
-    - name: Install Python packages
-      ansible.builtin.apt:
-        name:
-          - python3
-          - python3-pip
-          - python3-venv
-        state: present

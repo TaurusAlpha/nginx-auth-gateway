@@ -2,7 +2,11 @@
 # user is set via systemd override
 worker_processes auto;
 pid {{ nginx_pid_dir }}/nginx.pid;
-# include /etc/nginx/modules-enabled/*.conf;
+
+{% if nginx_plus | bool %}
+# Load NGINX App Protect WAF module for NGINX Plus
+load_module modules/ngx_http_app_protect_module.so;
+{% endif %}
 
 # Events Configuration
 events {
@@ -121,4 +125,11 @@ http {
     client_header_timeout 12;
     keepalive_timeout 15;
     send_timeout 10;
+
+    {% if nginx_plus | bool %}
+    # App Protect global settings - specific settings are in server blocks
+    app_protect_enable on;
+    app_protect_security_log_enable on;
+    app_protect_security_log "/etc/app_protect/conf/log_default.json" /var/log/app_protect/security.log;
+    {% endif %}
 }
