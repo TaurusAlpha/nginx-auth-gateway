@@ -8,7 +8,7 @@ secret_name: "secret/nginx/auth-validator"
 nginx_plus: true  # Set to true to install NGINX Plus instead of open-source NGINX
 nginx_plus_license_key: "nginx-one.key"  # Path to NGINX Plus license key file
 nginx_plus_license_cert: "nginx-one.crt"  # Path to NGINX Plus license certificate file
-nginx_plus_jwt_token: "nginx-one.key"  # Path to NGINX JWT token file
+nginx_plus_jwt_token: "nginx-one.jwt"  # Path to NGINX JWT token file
 
 # NGINX App Protect WAF settings
 app_protect_policy: "policy_template_nginx_base"  # Options: policy_template_nginx_base, policy_template_nginx_strict

@@ -85,6 +85,25 @@ If using NGINX Plus and App Protect, ensure the following prerequisites are met:
 - App Protect WAF is enabled by setting `nginx_plus: true` in the environment configuration.
 - App Protect policies can be customized in `roles/nginx/files/app-protect-policy.json`.
 
+### NGINX Plus License Management
+
+Each server running NGINX Plus requires its own valid license. Follow these steps to add license files for a new server:
+
+1. Create a directory with the server's hostname:
+   ```
+   mkdir -p playbooks/roles/nginx/license/NEW_SERVER_HOSTNAME
+   ```
+
+2. Copy the server-specific NGINX Plus license files into this directory:
+   ```
+   cp /path/to/nginx-repo.crt playbooks/roles/nginx/license/NEW_SERVER_HOSTNAME/
+   cp /path/to/nginx-repo.key playbooks/roles/nginx/license/NEW_SERVER_HOSTNAME/
+   ```
+
+3. Set `nginx_plus: true` in the host_vars file for this server.
+
+**Note:** License files are automatically excluded from version control.
+
 ### Targeting Specific Servers
 
 You can deploy to specific server groups defined in your inventory:

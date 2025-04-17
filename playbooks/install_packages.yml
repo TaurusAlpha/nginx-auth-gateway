@@ -53,9 +53,19 @@
 
         - name: Create directory for NGINX Plus license files
           ansible.builtin.file:
-            path: /etc/ssl/nginx
+            path: "{{ nginx_plus_license_dir }}"
             state: directory
             mode: '0755'
+
+        - name: Copy NGINX Plus license files
+          ansible.builtin.copy:
+            src: "roles/nginx/license/{{ inventory_hostname }}/{{ item.src }}"
+            dest: "{{ nginx_plus_license_dir }}/{{ item.dest }}"
+            mode: '0644'
+          with_items:
+            - { src: "{{ nginx_plus_license_cert }}", dest: "nginx-repo.crt" }
+            - { src: "{{ nginx_plus_license_key }}", dest: "nginx-repo.key" }
+            - { src: "{{ nginx_plus_jwt_token }}", dest: "nginx-repo.jwt" }
 
         - name: NGINX Plus key
           ansible.builtin.apt_key:
