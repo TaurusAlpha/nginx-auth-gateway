@@ -5,7 +5,10 @@ This project sets up an NGINX API Gateway with a custom authentication validator
 ## Components
 
 1. **NGINX Server**: Acts as the API Gateway and reverse proxy
-2. **Auth Validator Service**: A Flask application that validates request headers against an AWS Secret
+   - Supports both open-source NGINX and NGINX Plus.
+   - Optional integration with NGINX App Protect for enhanced security.
+2. **Auth Validator Service**: A Flask application that validates request headers against an AWS Secret.
+3. **Vault Integration**: Securely manages sensitive credentials using Ansible Vault.
 
 ## Setup Instructions
 
@@ -14,17 +17,19 @@ This project sets up an NGINX API Gateway with a custom authentication validator
 - Ansible 2.9+
 - Target servers with SSH access
 - Target servers with pre-installed packages or internet access
+- NGINX Plus license files (if using NGINX Plus)
+- AWS credentials for accessing Secrets Manager
 
 ### Securing Credentials
 
-Before deployment, encrypt your AWS credentials:
+Before deployment, encrypt your AWS credentials and other sensitive data using Ansible Vault:
 
 ```bash
 # Create encrypted vault
-ansible-vault create group_vars/vault.yml
+ansible-vault create inventory/group_vars/vault.yml
 
 # Edit existing vault
-ansible-vault edit group_vars/vault.yml
+ansible-vault edit inventory/group_vars/vault.yml
 ```
 
 ### Environment-Based Deployments
@@ -72,6 +77,13 @@ ansible-playbook playbooks/master.yml --ask-vault-pass -e "env=dev" --tags "vali
 # Deploy setup components
 ansible-playbook playbooks/master.yml --ask-vault-pass -e "env=prod" --tags "setup"
 ```
+
+### NGINX Plus and App Protect
+
+If using NGINX Plus and App Protect, ensure the following prerequisites are met:
+- NGINX Plus license key and certificate files are available.
+- App Protect WAF is enabled by setting `nginx_plus: true` in the environment configuration.
+- App Protect policies can be customized in `roles/nginx/files/app-protect-policy.json`.
 
 ### Targeting Specific Servers
 
@@ -129,6 +141,7 @@ This section describes all available variables used in the playbooks.
 | `nginx_plus` | Install NGINX Plus instead of open-source NGINX | `false` |
 | `nginx_plus_license_key` | Path to NGINX Plus license key file | `""` |
 | `nginx_plus_license_cert` | Path to NGINX Plus license certificate file | `""` |
+| `nginx_plus_jwt_token` | Path to NGINX Plus JWT token file | `""` |
 | `dns_servers` | DNS servers for NGINX to use for name resolution | `8.8.8.8 8.8.4.4` |
 | `server_name` | NGINX server name directive | `aws-ingress-validator.local` |
 | `server_port` | Port for NGINX to listen on | `443` |
@@ -150,8 +163,8 @@ This section describes all available variables used in the playbooks.
 | Variable | Description | Default Value |
 |----------|-------------|---------------|
 | `create_self_signed_cert` | Whether to create a self-signed certificate | `true` |
-| `server_certificate_chain` | Path to custom certificate chain file | N/A (Optional) |
-| `server_certificate_key` | Path to custom certificate key file | N/A (Optional) |
+| `server_certificate_chain` | Path to custom certificate chain file | `""` |
+| `server_certificate_key` | Path to custom certificate key file | `""` |
 
 ### Validator Service Configuration
 
@@ -178,16 +191,17 @@ curl -X GET https://your-server/mock \
 
 ## Security Notes
 
-- This setup uses TLS for all external communication
-- Authentication uses a secure header validated against AWS Secrets Manager
-- All secrets should be stored in an encrypted vault file
+- This setup uses TLS for all external communication.
+- Authentication uses a secure header validated against AWS Secrets Manager.
+- All secrets should be stored in an encrypted vault file.
+- NGINX App Protect provides additional security features, including WAF policies.
 
 ## Automatic Service Restarts
 
 The deployment playbooks automatically restart services when their configuration changes:
 
-- When NGINX configuration files are modified, the NGINX service will be restarted
-- When Auth Validator configuration or Python code is modified, the validator service will be restarted
+- When NGINX configuration files are modified, the NGINX service will be restarted.
+- When Auth Validator configuration or Python code is modified, the validator service will be restarted.
 
 This ensures that the latest configurations are always active without manual intervention.
 
