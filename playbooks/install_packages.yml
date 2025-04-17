@@ -104,27 +104,6 @@
             state: present
             update_cache: false
 
-        - name: Copy NGINX Plus certificate
-          ansible.builtin.copy:
-            src: "roles/nginx/license/{{ nginx_plus_license_cert }}"
-            dest: /etc/ssl/nginx/nginx-repo.crt
-            mode: '0644'
-          when: nginx_plus_license_cert != ""
-
-        - name: Copy NGINX Plus key
-          ansible.builtin.copy:
-            src: "roles/nginx/license/{{ nginx_plus_license_key }}"
-            dest: /etc/ssl/nginx/nginx-repo.key
-            mode: '0644'
-          when: nginx_plus_license_key != ""
-
-        - name: Copy NGINX Plus JWT token
-          ansible.builtin.copy:
-            src: "roles/nginx/license/{{ nginx_plus_jwt_token }}"
-            dest: /etc/ssl/nginx/license.jwt
-            mode: '0644'
-          when: nginx_plus_jwt_token != ""
-
         - name: Download NGINX Plus apt configuration
           ansible.builtin.get_url:
             url: https://cs.nginx.com/static/files/90pkgs-nginx
