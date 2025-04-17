@@ -16,12 +16,6 @@
                 },
                 {
                     "name": "VIOL_EVASION"
-                },
-                {
-                    "name": "VIOL_MALICIOUS_FILE"
-                },
-                {
-                    "name": "VIOL_GENERIC_ATTACK_SIGNATURE"
                 }
             ]
         },
