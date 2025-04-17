@@ -68,6 +68,7 @@
   args:
     creates: "{{ nginx_cert_dir }}/rootCA.key"
   when: create_self_signed_cert == "true"
+  register: root_ca_key_result
 
 - name: Generate Root CA certificate
   ansible.builtin.command: >
@@ -78,12 +79,14 @@
   args:
     creates: "{{ nginx_cert_dir }}/rootCA.pem"
   when: create_self_signed_cert == "true"
+  register: root_ca_cert_result
 
 - name: Generate server private key
   ansible.builtin.command: openssl genrsa -out {{ nginx_cert_dir }}/server/{{ server_name }}-nginx.key 2048
   args:
     creates: "{{ nginx_cert_dir }}/server/{{ server_name }}-nginx.key"
   when: create_self_signed_cert == "true"
+  register: server_key_result
 
 - name: Generate server certificate signing request (CSR)
   ansible.builtin.command: >
@@ -103,7 +106,6 @@
   args:
     creates: "{{ nginx_cert_dir }}/server/{{ server_name }}-fullchain.crt"
   when: create_self_signed_cert == "true"
-  notify: "restart nginx service"
 
 - name: Copy existing SSL certificate if not generating self-signed
   ansible.builtin.copy:
@@ -113,7 +115,7 @@
     group: "{{ nginx_group }}"
     mode: "0644"
   when: create_self_signed_cert != "true"
-  notify: "restart nginx service"
+  register: copy_cert_result
 
 - name: Copy existing SSL private key if not generating self-signed
   ansible.builtin.copy:
@@ -123,15 +125,16 @@
     group: "{{ nginx_group }}"
     mode: "0600"
   when: create_self_signed_cert != "true"
-  notify: "restart nginx service"
+  register: copy_key_result
 
 - name: Set permissions and ownership for SSL certificate files
   ansible.builtin.find:
-    paths: "{{ nginx_cert_dir }}/server"
+    paths: "{{ nginx_cert_dir }}"
     recurse: true
     file_type: file
+    excludes:
+      - "*.key"
   register: cert_files
-  notify: "restart nginx service"
 
 - name: Apply correct permissions to SSL certificate files
   ansible.builtin.file:
@@ -140,15 +143,14 @@
     group: "{{ nginx_group }}"
     mode: "0644"
   with_items: "{{ cert_files.files }}"
-  notify: "restart nginx service"
+  register: cert_files_perm_result
 
 - name: Set restrictive permissions for private key files
   ansible.builtin.find:
-    paths: "{{ nginx_cert_dir }}/server"
+    paths: "{{ nginx_cert_dir }}"
     patterns: "*.key"
     recurse: true
   register: key_files
-  notify: "restart nginx service"
 
 - name: Apply restrictive permissions to private key files
   ansible.builtin.file:
@@ -157,7 +159,7 @@
     group: "{{ nginx_group }}"
     mode: "0600"
   with_items: "{{ key_files.files }}"
-  notify: "restart nginx service"
+  register: key_files_perm_result
 
 - name: Create systemd override directory for nginx
   ansible.builtin.file:
@@ -170,7 +172,6 @@
     src: nginx_override.j2
     dest: /etc/systemd/system/nginx.service.d/override.conf
     mode: "0644"
-  notify: "restart nginx service"
 
 - name: Copy App Protect policy file
   ansible.builtin.copy:
@@ -180,14 +181,31 @@
     group: "{{ nginx_group }}"
     mode: "0644"
   when: nginx_plus | bool
-  notify: "restart nginx service"
 
 - name: Reload systemd daemon
   ansible.builtin.systemd:
     daemon_reload: true
 
-- name: Restart and enable NGINX service
+- name: Start and enable NGINX service
   ansible.builtin.systemd:
     name: nginx
-    state: restarted
+    state: started
     enabled: true
+
+# Check if any certificate-related task made changes and restart NGINX if needed
+- name: Check certificate changes and notify handler
+  ansible.builtin.debug:
+    msg: "Certificate changes detected, restarting NGINX service"
+  vars:
+    cert_changes: >
+      {{
+        (root_ca_key_result is defined and root_ca_key_result.changed) or
+        (root_ca_cert_result is defined and root_ca_cert_result.changed) or
+        (server_key_result is defined and server_key_result.changed) or
+        (copy_cert_result is defined and copy_cert_result.changed) or
+        (copy_key_result is defined and copy_key_result.changed) or
+        cert_files_perm_result.changed | default(false) or
+        key_files_perm_result.changed | default(false)
+      }}
+  when: cert_changes | bool
+  notify: "restart nginx service"
