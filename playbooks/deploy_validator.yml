@@ -63,10 +63,6 @@
         state: started
       register: flask_service_status
 
-    - name: Display Flask service status
-      ansible.builtin.debug:
-        msg: "Flask service is running: {{ flask_service_status }}"
-
     - name: Verify connectivity to validation service
       ansible.builtin.uri:
         url: http://127.0.0.1:9000/pong
