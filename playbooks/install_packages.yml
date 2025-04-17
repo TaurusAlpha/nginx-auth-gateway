@@ -67,6 +67,12 @@
             - { src: "{{ nginx_plus_license_key }}", dest: "nginx-repo.key" }
             - { src: "{{ nginx_plus_jwt_token }}", dest: "license.jwt" }
 
+        - name: Copy NGINX Plus JWT token
+          ansible.builtin.copy:
+            src: "roles/nginx/license/{{ inventory_hostname }}/{{ nginx_plus_jwt_token }}"
+            dest: "/etc/nginx/license.jwt"
+            mode: '0644'
+
         - name: NGINX Plus key
           ansible.builtin.apt_key:
             url: https://cs.nginx.com/static/keys/nginx_signing.key
