@@ -51,8 +51,8 @@ validator_log_dir: "/opt/auth-validator/logs"
 nginx_cert_dir: "/etc/nginx/certs"
 nginx_pid_dir: "/run/nginx"
 nginx_plus_license_dir: "/etc/ssl/nginx"
-nginx_plus_log_dir: "/var/log/nginx-plus"
-nginx_plus_app_protect_log_dir: "/var/log/app-protect"
+nginx_plus_log_dir: "/var/log/nginx"
+nginx_plus_app_protect_log_dir: "/var/log/app_protect"
 
 # Python configuration
 python_venv_dir: "{{ validator_base_dir }}/venv"
