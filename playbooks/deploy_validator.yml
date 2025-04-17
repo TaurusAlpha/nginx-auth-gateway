@@ -4,6 +4,11 @@
   become: true
 
   pre_tasks:
+    - name: Include vault variables
+      ansible.builtin.include_vars: "../inventory/group_vars/vault.yml"
+      tags: [always]
+      no_log: true
+
     - name: Include environment-specific variables
       ansible.builtin.include_vars: "../environments/{{ env | default('prod') }}.yml"
       tags: [always]
@@ -13,7 +18,6 @@
         msg: "Deploying to {{ env | default('prod') }} environment on {{ inventory_hostname }}"
       tags: [always]
 
-  tasks:
     - name: Create Flask app directory
       ansible.builtin.file:
         path: "{{ validator_base_dir }}"

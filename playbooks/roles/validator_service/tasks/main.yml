@@ -30,6 +30,6 @@
 
 - name: Enable and start Flask service
   ansible.builtin.systemd:
-    name: "{{ service_name }}.service"
+    name: "{{ auth_service_name }}.service"
     enabled: true
     state: started
