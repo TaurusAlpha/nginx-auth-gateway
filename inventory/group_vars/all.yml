@@ -15,9 +15,11 @@ env: "prod"
 # Set to true to install NGINX Plus instead of open-source NGINX
 nginx_plus: false 
 # Path to NGINX Plus license key file
-# nginx_plus_license_key: "ssl/nginx-repo.key"
+nginx_plus_license_key: ""
 # Path to NGINX Plus license certificate file
-# nginx_plus_license_cert: "ssl/nginx-repo.crt"
+nginx_plus_license_cert: ""
+# Path to NGINX Plus JWT token file
+nginx_plus_jwt_token: ""
 
 # NGINX variables
 dns_servers: "8.8.8.8 8.8.4.4"
@@ -34,10 +36,8 @@ server_health_check_path: "/health"
 
 # Self-signed certificate generation
 create_self_signed_cert: "true"
-
-# Optional certificate files should be uploaded to roles ssl directory
-# server_certificate_chain: "certificate_chain.crt"
-# server_certificate_key: "certificate_key.key"
+server_certificate_chain: ""
+server_certificate_key: ""
 
 # User and group configuration
 validator_user: "auth-validator"
