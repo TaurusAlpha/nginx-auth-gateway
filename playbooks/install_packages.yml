@@ -65,7 +65,7 @@
           with_items:
             - { src: "{{ nginx_plus_license_cert }}", dest: "nginx-repo.crt" }
             - { src: "{{ nginx_plus_license_key }}", dest: "nginx-repo.key" }
-            - { src: "{{ nginx_plus_jwt_token }}", dest: "nginx-repo.jwt" }
+            - { src: "{{ nginx_plus_jwt_token }}", dest: "license.jwt" }
 
         - name: NGINX Plus key
           ansible.builtin.apt_key:
