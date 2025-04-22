@@ -36,7 +36,7 @@
 
     - name: Deploy main rsyslog configuration
       ansible.builtin.template:
-        src: rsyslog/templates/rsyslog.conf.j2
+        src: rsyslog.conf.j2
         dest: /etc/rsyslog.conf
         owner: root
         group: root
@@ -45,7 +45,7 @@
 
     - name: Deploy NGINX specific rsyslog configuration
       ansible.builtin.template:
-        src: rsyslog/templates/service-configs/nginx.conf.j2
+        src: nginx.conf.j2
         dest: /etc/rsyslog.d/nginx.conf
         owner: root
         group: root
