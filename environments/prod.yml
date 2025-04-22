@@ -1,51 +1,31 @@
 ---
-# Auth Validator environment variables
-aws_region: "eu-west-1"
-debug: "false"
-secret_name: "secret/nginx/auth-validator"
-
-# NGINX variables
-nginx_plus: true  # Set to true to install NGINX Plus instead of open-source NGINX
-nginx_plus_license_key: "nginx-one.key"  # Path to NGINX Plus license key file
-nginx_plus_license_cert: "nginx-one.crt"  # Path to NGINX Plus license certificate file
-nginx_plus_jwt_token: "nginx-one.jwt"  # Path to NGINX JWT token file
-
-# NGINX App Protect WAF settings
-app_protect_policy: "policy_template_nginx_base"  # Options: policy_template_nginx_base, policy_template_nginx_strict
-app_protect_violation_mode: "blocking"  # Options: blocking, logging
-
-# NGINX general settings
-dns_servers: "8.8.8.8 8.8.4.4"
-server_name: "aws-ingress-validator.local"
-server_port: "443"
-
-# Backend servers configuration
-backend_servers:
-  - "172.31.30.4:8080"
-
-server_health_check: "true"
-server_health_check_path: "/health"
-
-# Self-signed certificate generation
-create_self_signed_cert: "true"
-server_certificate_chain: "certificate_chain.crt"
-server_certificate_key: "certificate_key.key"
-
 # Environment name for logging and identification
 env: "prod"
 
-# User and group configuration
-validator_user: "auth-validator"
-validator_group: "auth-validator"
-nginx_user: "nginx"
-nginx_group: "nginx"
+# Auth Validator environment variables
+secret_name: "secret/nginx/auth-validator"
 
-# Directory paths
-validator_base_dir: "/opt/auth-validator"
-validator_log_dir: "/opt/auth-validator/logs"
-nginx_cert_dir: "/etc/nginx/certs"
-nginx_pid_dir: "/run/nginx"
+# NGINX Plus Configuration
+# Override default to use NGINX Plus
+nginx_plus: true
+# Path to license key file
+nginx_plus_license_key: "nginx-one.key"
+# Path to license certificate file
+nginx_plus_license_cert: "nginx-one.crt"
+# Path to JWT token file
+nginx_plus_jwt_token: "nginx-one.jwt"
 
-# Python configuration
-python_venv_dir: "{{ validator_base_dir }}/venv"
-python_command: "/usr/bin/python3"
+# NGINX App Protect WAF settings
+app_protect_policy: "policy_template_nginx_base"
+app_protect_violation_mode: "blocking"
+
+# Backend servers (production specific)
+backend_servers:
+  - "172.31.30.4:8080"
+
+# Enable health check in production
+server_health_check: "true"
+
+# SSL certificate options
+server_certificate_chain: "certificate_chain.crt"
+server_certificate_key: "certificate_key.key"

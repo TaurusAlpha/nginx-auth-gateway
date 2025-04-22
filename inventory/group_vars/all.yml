@@ -1,77 +1,111 @@
 ---
-# Auth Validator environment variables
+# AWS Authentication - Required for accessing AWS Secrets Manager
+# AWS Access Key ID from vault
 aws_access_key_id: "{{ vault_aws_access_key_id }}"
+# AWS Secret Access Key from vault
 aws_secret_access_key: "{{ vault_aws_secret_access_key }}"
-# aws_access_key_id: "<CHANGE>"
-# aws_secret_access_key: "<CHANGE>"
+# AWS region where secrets are stored
 aws_region: "eu-west-1"
+
+# Environment Configuration
+# Environment identifier (prod, staging, dev)
+env: "prod"
+# Enable debug logging in validator service
 debug: "false"
+# AWS Secret Manager secret name for auth validator
 secret_name: "secret/nginx/auth-validator"
 
-# Environment identification
-env: "prod"
-
-# NGINX variables
+# NGINX Installation Configuration
 # Set to true to install NGINX Plus instead of open-source NGINX
 nginx_plus: false
-# Path to NGINX Plus license key file
+# Path to NGINX Plus license key file relative to nginx/license/<hostname>/ 
 nginx_plus_license_key: ""
-# Path to NGINX Plus license certificate file
+# Path to NGINX Plus license cert file relative to nginx/license/<hostname>/
 nginx_plus_license_cert: ""
-# Path to NGINX Plus JWT token file
+# Path to NGINX Plus JWT token file relative to nginx/license/<hostname>/
 nginx_plus_jwt_token: ""
 
-# NGINX variables
+# NGINX App Protect WAF Settings (NGINX Plus only)
+# App Protect policy template
+app_protect_policy: "policy_template_nginx_base"
+# App Protect violation response mode (blocking, logging)
+app_protect_violation_mode: "blocking"
+
+# NGINX Server Configuration
+# DNS servers for NGINX to use for name resolution
 dns_servers: "8.8.8.8 8.8.4.4"
+# NGINX server name directive
 server_name: "aws-ingress-validator.local"
+# Port for NGINX to listen on
 server_port: "443"
 
-# Backend servers configuration
+# Backend Server Configuration
+# List of backend servers for proxying
 backend_servers:
   - "localhost:8080"
 
-# Health check configuration
+# Health Check Configuration
+# Enable health check endpoint
 server_health_check: "false"
+# Path for health check endpoint
 server_health_check_path: "/health"
 
-# Self-signed certificate generation
+# SSL Configuration
+# Generate self-signed certificates during deployment
 create_self_signed_cert: "true"
+# Path to custom certificate chain file (when not using self-signed)
 server_certificate_chain: ""
+# Path to custom certificate key file (when not using self-signed)
 server_certificate_key: ""
 
-# User and group configuration
+# User and Group Configuration
+# User for validator service
 validator_user: "auth-validator"
+# Group for validator service
 validator_group: "auth-validator"
+# User for NGINX processes
 nginx_user: "nginx"
+# Group for NGINX processes
 nginx_group: "nginx"
 
-# Directory paths
+# Directory Paths
+# Base directory for validator service
 validator_base_dir: "/opt/auth-validator"
+# Directory for validator logs
 validator_log_dir: "/opt/auth-validator/logs"
+# Directory for SSL certificates
 nginx_cert_dir: "/etc/nginx/certs"
+# Directory for NGINX PID file
 nginx_pid_dir: "/run/nginx"
+# Directory for NGINX Plus license files
 nginx_plus_license_dir: "/etc/ssl/nginx"
+# Directory for NGINX Plus logs
 nginx_plus_log_dir: "/var/log/nginx"
+# Directory for NGINX App Protect logs
 nginx_plus_app_protect_log_dir: "/var/log/app_protect"
 
-# Python configuration
+# Python Configuration
+# Python virtual environment path
 python_venv_dir: "{{ validator_base_dir }}/venv"
+# Python interpreter command
 python_command: "/usr/bin/python3"
 
-# Service names
+# Service Names
+# Name of the validator systemd service
 auth_service_name: "auth-validator"
 
 # Logging Configuration
-# Rsyslog will handle both local file logging and remote syslog forwarding
+# Use rsyslog for logging
 use_rsyslog: true
-# Enable/disable forwarding logs to a remote syslog server
+# Forward logs to a remote syslog server
 forward_logs_to_remote: false
-# Remote syslog server configuration (when forwarding is enabled)
+# Remote syslog server address
 syslog_server: "127.0.0.1"
+# Remote syslog server port
 syslog_port: 514
-# Protocol for remote logging: udp or tcp
+# Protocol for remote logging (udp/tcp)
 syslog_protocol: "udp"
-# Facility level (0-23, typically 1 for user-level messages)
+# Facility level (0-23, typically 1 for user-level)
 syslog_facility: 1
-# Severity level (0-7, 5 is notice, 6 is info)
+# Severity level (0-7, 6 is info)
 syslog_severity: 6
