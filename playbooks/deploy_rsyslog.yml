@@ -24,50 +24,6 @@
         name: rsyslog
         state: present
 
-  tasks:
-    - name: Create rsyslog config directories
-      ansible.builtin.file:
-        path: "{{ item }}"
-        state: directory
-        mode: '0755'
-      loop:
-        - /etc/rsyslog.d
-        - /etc/rsyslog.d/service-configs
-
-    - name: Deploy main rsyslog configuration
-      ansible.builtin.template:
-        src: rsyslog.conf.j2
-        dest: /etc/rsyslog.conf
-        owner: root
-        group: root
-        mode: '0644'
-      notify: restart rsyslog
-
-    - name: Deploy NGINX specific rsyslog configuration
-      ansible.builtin.template:
-        src: nginx.conf.j2
-        dest: /etc/rsyslog.d/nginx.conf
-        owner: root
-        group: root
-        mode: '0644'
-      notify: restart rsyslog
-
-    - name: Deploy App Protect specific rsyslog configuration
-      ansible.builtin.template:
-        src: rsyslog/templates/service-configs/app-protect.conf.j2
-        dest: /etc/rsyslog.d/app-protect.conf
-        owner: root
-        group: root
-        mode: '0644'
-      when: nginx_plus | bool
-      notify: restart rsyslog
-
-    - name: Ensure rsyslog service is running and enabled
-      ansible.builtin.systemd:
-        name: rsyslog
-        state: started
-        enabled: true
-
   roles:
     - role: rsyslog
       tags: [rsyslog, logging, configuration]
