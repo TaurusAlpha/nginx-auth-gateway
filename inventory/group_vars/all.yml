@@ -13,7 +13,7 @@ env: "prod"
 
 # NGINX variables
 # Set to true to install NGINX Plus instead of open-source NGINX
-nginx_plus: false 
+nginx_plus: false
 # Path to NGINX Plus license key file
 nginx_plus_license_key: ""
 # Path to NGINX Plus license certificate file
@@ -60,3 +60,18 @@ python_command: "/usr/bin/python3"
 
 # Service names
 auth_service_name: "auth-validator"
+
+# Logging Configuration
+# Rsyslog will handle both local file logging and remote syslog forwarding
+use_rsyslog: true
+# Enable/disable forwarding logs to a remote syslog server
+forward_logs_to_remote: false
+# Remote syslog server configuration (when forwarding is enabled)
+syslog_server: "127.0.0.1"
+syslog_port: 514
+# Protocol for remote logging: udp or tcp
+syslog_protocol: "udp"
+# Facility level (0-23, typically 1 for user-level messages)
+syslog_facility: 1
+# Severity level (0-7, 5 is notice, 6 is info)
+syslog_severity: 6

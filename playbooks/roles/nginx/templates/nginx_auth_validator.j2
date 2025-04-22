@@ -15,8 +15,15 @@ server {
     app_protect_enable on;
     app_protect_policy_file "/etc/app_protect/conf/app-protect-policy.json";
     app_protect_security_log_enable on;
-    app_protect_security_log "/etc/app_protect/conf/log_default.json" /var/log/app_protect/security_{{ server_name }}.log;
+    
+    # App Protect logging configuration
+    {% if use_rsyslog | bool %}
+    # When rsyslog is enabled, send logs to both file and syslog
+    app_protect_security_log "/etc/app_protect/conf/log_default.json" syslog:server=unix:/dev/log,facility=local{{ syslog_facility }},tag=nginx_app_protect_{{ env }};
     {% endif %}
+
+    # Standard file logging
+    app_protect_security_log "/etc/app_protect/conf/log_default.json" {{ nginx_plus_app_protect_log_dir }}/security_{{ env }}_{{ server_name }}.log;
 
     # SSL Certificate Configuration
     ssl_certificate     {{ nginx_cert_dir }}/server/{{ server_name }}-fullchain.crt;

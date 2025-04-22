@@ -1,0 +1,28 @@
+# NGINX App Protect Rsyslog Configuration
+# File: /etc/rsyslog.d/app-protect.conf
+
+# Set templates for App Protect logs
+template(name="app-protect-template" type="string" string="%timestamp% %msg%\n")
+
+# Create dynamic file paths
+template(name="app-protect-file" type="string" string="{{ nginx_plus_app_protect_log_dir }}/rsyslog_app_protect_{{ env }}.log")
+
+# Filter and process NGINX App Protect logs
+if $programname startswith 'nginx_app_protect' then {
+    # Local file storage with proper formatting
+    action(type="omfile"
+           dynaFile="app-protect-file"
+           template="app-protect-template")
+    
+    {% if forward_logs_to_remote | bool %}
+    # Forward to remote syslog server if enabled
+    action(type="omfwd"
+           target="{{ syslog_server }}"
+           port="{{ syslog_port }}"
+           protocol="{{ syslog_protocol }}"
+           template="app-protect-template")
+    {% endif %}
+    
+    # Stop processing this message after handling
+    stop
+}
