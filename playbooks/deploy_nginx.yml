@@ -68,7 +68,7 @@
       changed_when: false
 
     - name: Verify NGINX service is running
-      ansible.builtin.service:
+      ansible.builtin.systemd:
         name: nginx
         state: started
       register: nginx_running

@@ -30,7 +30,7 @@
 
   post_tasks:
     - name: Verify rsyslog service is running
-      ansible.builtin.service:
+      ansible.builtin.systemd:
         name: rsyslog
         state: started
       register: rsyslog_running

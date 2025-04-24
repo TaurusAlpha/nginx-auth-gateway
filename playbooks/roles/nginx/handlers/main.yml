@@ -3,4 +3,6 @@
   ansible.builtin.systemd:
     name: nginx
     state: restarted
+  become: true
+  become_user: "{{ nginx_user }}"
   listen: "restart nginx service"
