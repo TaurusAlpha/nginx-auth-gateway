@@ -1,0 +1,39 @@
+# Auth Validator Rsyslog Configuration
+# File: /etc/rsyslog.d/auth-validator.conf
+
+# Template for log formatting
+template(name="auth-validator-template" type="string" string="%timestamp% %msg%\n")
+
+# Template for dynamic file paths
+template(name="auth-validator-file" type="string" string="{{ rsyslog_log_dir }}/auth_validator/auth_validator_{{ env }}.log")
+
+# Input file configuration for auth-validator logs
+module(load="imfile" PollingInterval="10")
+input(type="imfile"
+      File="{{ validator_log_dir }}/stdout.log"
+      Tag="auth_validator_stdout"
+      Severity="info"
+      Facility="local1")
+
+input(type="imfile"
+      File="{{ validator_log_dir }}/stderr.log"
+      Tag="auth_validator_stderr"
+      Severity="error"
+      Facility="local1")
+
+# Process auth-validator logs
+if $programname startswith 'auth_validator' then {
+    # Write to local file
+    action(type="omfile"
+           dynaFile="auth-validator-file"
+           template="auth-validator-template")
+    
+    {% if forward_logs_to_remote | bool %}
+    # Forward to remote syslog server
+    action(type="omfwd"
+           target="{{ syslog_server }}"
+           port="{{ syslog_port }}"
+           protocol="{{ syslog_protocol }}"
+           template="auth-validator-template")
+    {% endif %}
+}

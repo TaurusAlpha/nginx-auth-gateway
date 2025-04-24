@@ -5,7 +5,7 @@
 template(name="app-protect-template" type="string" string="%timestamp% %msg%\n")
 
 # Create dynamic file paths
-template(name="app-protect-file" type="string" string="{{ nginx_plus_app_protect_log_dir }}/rsyslog_app_protect_{{ env }}.log")
+template(name="app-protect-file" type="string" string="{{ rsyslog_log_dir }}/app_protect/app_protect_{{ env }}.log")
 
 # Filter and process NGINX App Protect logs
 if $programname startswith 'nginx_app_protect' then {

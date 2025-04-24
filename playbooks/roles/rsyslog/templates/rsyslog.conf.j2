@@ -39,8 +39,3 @@ cron.*                                                  /var/log/cron
 
 # Save boot messages also to boot.log
 local7.*                                                /var/log/boot.log
-
-{% if forward_logs_to_remote | bool %}
-# Forward all logs to remote syslog server
-*.* @{% if syslog_protocol == "tcp" %}@{% endif %}{{ syslog_server }}:{{ syslog_port }}
-{% endif %}

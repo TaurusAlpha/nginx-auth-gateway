@@ -51,14 +51,14 @@ http {
     '"$http_authorization" "$request_body"';
 
     {% if use_rsyslog | bool %}
-    # When rsyslog is enabled, send logs to both file and syslog
-    access_log syslog:server=unix:/dev/log,facility=local{{ syslog_facility }},tag=nginx_access api_gateway;
-    error_log syslog:server=unix:/dev/log,facility=local{{ syslog_facility }},tag=nginx_error warn;
-    {% endif %}
-
+    # When rsyslog is enabled, send logs syslog
+    access_log syslog:server=localhost:514,facility=local{{ syslog_facility }},tag=nginx_access api_gateway;
+    error_log syslog:server=localhost:514,facility=local{{ syslog_facility }},tag=nginx_error info;
+    {% else %}
     # Standard file logging
-    access_log {{ nginx_plus_log_dir if nginx_plus | bool else '/var/log/nginx' }}/{{ env }}_access.log api_gateway;
-    error_log {{ nginx_plus_log_dir if nginx_plus | bool else '/var/log/nginx' }}/{{ env }}_error.log warn;
+    access_log {{ nginx_log_dir if nginx_plus | bool else '/var/log/nginx' }}/{{ env }}_access.log api_gateway;
+    error_log {{ nginx_log_dir if nginx_plus | bool else '/var/log/nginx' }}/{{ env }}_error.log info;
+    {% endif %}
 
     # Proxy Settings
     proxy_http_version 1.1;
