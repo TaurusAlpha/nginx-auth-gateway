@@ -63,69 +63,68 @@
     jinja2_native: true  # Ensure native Jinja2 syntax is used
   notify: "restart nginx service"
 
-- name: Generate Root CA key
-  ansible.builtin.command: openssl genrsa -out {{ nginx_cert_dir }}/rootCA.key 2048
-  args:
-    creates: "{{ nginx_cert_dir }}/rootCA.key"
+# Block: Generate self-signed certificates
+- block:
   when: create_self_signed_cert == "true"
-  register: root_ca_key_result
+    - name: Generate Root CA key
+      ansible.builtin.command: openssl genrsa -out {{ nginx_cert_dir }}/rootCA.key 2048
+      args:
+        creates: "{{ nginx_cert_dir }}/rootCA.key"
+      register: root_ca_key_result
 
-- name: Generate Root CA certificate
-  ansible.builtin.command: >
-    openssl req -x509 -new -nodes -key {{ nginx_cert_dir }}/rootCA.key
-    -sha256 -days 1024
-    -out {{ nginx_cert_dir }}/rootCA.pem
-    -subj "/C=US/ST=California/L=San Francisco/O=My Company/OU=IT Department/CN={{ environment | capitalize }} Root CA"
-  args:
-    creates: "{{ nginx_cert_dir }}/rootCA.pem"
-  when: create_self_signed_cert == "true"
-  register: root_ca_cert_result
+    - name: Generate Root CA certificate
+      ansible.builtin.command: >
+        openssl req -x509 -new -nodes -key {{ nginx_cert_dir }}/rootCA.key
+        -sha256 -days 1024
+        -out {{ nginx_cert_dir }}/rootCA.pem
+        -subj "/C=US/ST=California/L=San Francisco/O=My Company/OU=IT Department/CN={{ environment | capitalize }} Root CA"
+      args:
+        creates: "{{ nginx_cert_dir }}/rootCA.pem"
+      register: root_ca_cert_result
 
-- name: Generate server private key
-  ansible.builtin.command: openssl genrsa -out {{ nginx_cert_dir }}/server/{{ server_name }}-nginx.key 2048
-  args:
-    creates: "{{ nginx_cert_dir }}/server/{{ server_name }}-nginx.key"
-  when: create_self_signed_cert == "true"
-  register: server_key_result
+    - name: Generate server private key
+      ansible.builtin.command: openssl genrsa -out {{ nginx_cert_dir }}/server/{{ server_name }}-nginx.key 2048
+      args:
+        creates: "{{ nginx_cert_dir }}/server/{{ server_name }}-nginx.key"
+      register: server_key_result
 
-- name: Generate server certificate signing request (CSR)
-  ansible.builtin.command: >
-    openssl req -new -key {{ nginx_cert_dir }}/server/{{ server_name }}-nginx.key
-    -out {{ nginx_cert_dir }}/server/{{ server_name }}-nginx.csr
-    -subj "/C=US/ST=California/L=San Francisco/O=My Company/OU=IT Department/CN={{ server_name }}"
-  args:
-    creates: "{{ nginx_cert_dir }}/server/{{ server_name }}-nginx.csr"
-  when: create_self_signed_cert == "true"
+    - name: Generate server certificate signing request (CSR)
+      ansible.builtin.command: >
+        openssl req -new -key {{ nginx_cert_dir }}/server/{{ server_name }}-nginx.key
+        -out {{ nginx_cert_dir }}/server/{{ server_name }}-nginx.csr
+        -subj "/C=US/ST=California/L=San Francisco/O=My Company/OU=IT Department/CN={{ server_name }}"
+      args:
+        creates: "{{ nginx_cert_dir }}/server/{{ server_name }}-nginx.csr"
 
-- name: Generate server certificate signed by Root CA
-  ansible.builtin.command: >
-    openssl x509 -req -in {{ nginx_cert_dir }}/server/{{ server_name }}-nginx.csr
-    -CA {{ nginx_cert_dir }}/rootCA.pem -CAkey {{ nginx_cert_dir }}/rootCA.key
-    -CAcreateserial -out {{ nginx_cert_dir }}/server/{{ server_name }}-fullchain.crt
-    -days 500 -sha256
-  args:
-    creates: "{{ nginx_cert_dir }}/server/{{ server_name }}-fullchain.crt"
-  when: create_self_signed_cert == "true"
+    - name: Generate server certificate signed by Root CA
+      ansible.builtin.command: >
+        openssl x509 -req -in {{ nginx_cert_dir }}/server/{{ server_name }}-nginx.csr
+        -CA {{ nginx_cert_dir }}/rootCA.pem -CAkey {{ nginx_cert_dir }}/rootCA.key
+        -CAcreateserial -out {{ nginx_cert_dir }}/server/{{ server_name }}-fullchain.crt
+        -days 500 -sha256
+      args:
+        creates: "{{ nginx_cert_dir }}/server/{{ server_name }}-fullchain.crt"
 
-- name: Copy existing SSL certificate if not generating self-signed
-  ansible.builtin.copy:
-    src: "ssl/{{ server_certificate_chain }}"
-    dest: "{{ nginx_cert_dir }}/server/{{ server_name }}-fullchain.crt"
-    owner: "{{ nginx_user }}"
-    group: "{{ nginx_group }}"
-    mode: "0644"
+# Block: Copy existing certificates
+- block:
   when: create_self_signed_cert != "true"
-  register: copy_cert_result
+    - name: Copy existing SSL certificate if not generating self-signed
+      ansible.builtin.copy:
+        src: "ssl/{{ server_certificate_chain }}"
+        dest: "{{ nginx_cert_dir }}/server/{{ server_name }}-fullchain.crt"
+        owner: "{{ nginx_user }}"
+        group: "{{ nginx_group }}"
+        mode: "0644"
+      register: copy_cert_result
 
-- name: Copy existing SSL private key if not generating self-signed
-  ansible.builtin.copy:
-    src: "ssl/{{ server_certificate_key }}"
-    dest: "{{ nginx_cert_dir }}/server/{{ server_name }}-nginx.key"
-    owner: "{{ nginx_user }}"
-    group: "{{ nginx_group }}"
-    mode: "0600"
-  when: create_self_signed_cert != "true"
-  register: copy_key_result
+    - name: Copy existing SSL private key if not generating self-signed
+      ansible.builtin.copy:
+        src: "ssl/{{ server_certificate_key }}"
+        dest: "{{ nginx_cert_dir }}/server/{{ server_name }}-nginx.key"
+        owner: "{{ nginx_user }}"
+        group: "{{ nginx_group }}"
+        mode: "0600"
+      register: copy_key_result
 
 - name: Set permissions and ownership for SSL certificate files
   ansible.builtin.find:
