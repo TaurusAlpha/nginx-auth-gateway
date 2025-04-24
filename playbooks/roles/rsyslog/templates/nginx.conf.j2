@@ -7,7 +7,7 @@ template(name="nginx-error-template" type="string" string="%timestamp% [%syslogs
 
 # Templates for dynamic file paths
 template(name="nginx-access-file" type="string" string="{{ rsyslog_log_dir }}/nginx/{{ env }}_access.log")
-template(name="nginx-error-file" type="string" string="{{ rsyslog_log_dir }}/{{ env }}_error.log")
+template(name="nginx-error-file" type="string" string="{{ rsyslog_log_dir }}/nginx/{{ env }}_error.log")
 
 # Process NGINX access logs
 if $programname startswith 'nginx_access' then {
