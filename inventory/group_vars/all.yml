@@ -72,7 +72,7 @@ nginx_group: "nginx"
 # Base directory for validator service
 validator_base_dir: "/opt/auth-validator"
 # Directory for validator logs
-validator_log_dir: "/opt/auth-validator/logs"
+validator_log_dir: "/var/log/auth-validator"
 # Directory for SSL certificates
 nginx_cert_dir: "/etc/nginx/certs"
 # Directory for NGINX PID file
@@ -80,9 +80,10 @@ nginx_pid_dir: "/run/nginx"
 # Directory for NGINX Plus license files
 nginx_plus_license_dir: "/etc/ssl/nginx"
 # Directory for NGINX Plus logs
-nginx_plus_log_dir: "/var/log/nginx"
+nginx_log_dir: "/var/log/nginx"
 # Directory for NGINX App Protect logs
-nginx_plus_app_protect_log_dir: "/var/log/app_protect"
+nginx_app_protect_log_dir: "/var/log/app_protect"
+
 
 # Python Configuration
 # Python virtual environment path
