@@ -9,6 +9,7 @@ This project sets up an NGINX API Gateway with a custom authentication validator
    - Optional integration with NGINX App Protect for enhanced security.
 2. **Auth Validator Service**: A Flask application that validates request headers against an AWS Secret.
 3. **Vault Integration**: Securely manages sensitive credentials using Ansible Vault.
+4. **Rsyslog Integration**: Centralizes logging for NGINX, Auth Validator, and App Protect.
 
 ## Setup Instructions
 
@@ -61,7 +62,16 @@ ansible-playbook playbooks/master.yml --ask-vault-pass -e "env=dev"
 
 The `env` variable determines both:
 1. Which environment configuration file to load (from `environments/<env>.yml`)
-2. Which server group to target (from inventory - `[production]`, `[staging]`, or `[development]`)
+2. Which server group to target (from inventory - `[prod]`, `[staging]`, or `[dev]`)
+
+#### Variables Processing Logic
+
+Variable values are determined through a hierarchy:
+- Base defaults are defined in `inventory/group_vars/all.yml`
+- Environment-specific overrides are in `environments/<env>.yml` 
+- Command-line variables (`-e` flag) have highest precedence
+
+This allows environment files to define only the values that differ from defaults.
 
 #### Targeted Deployments
 
@@ -127,10 +137,11 @@ ansible-playbook playbooks/master.yml --ask-vault-pass -e "env=prod target_hosts
 Deploy components individually:
 
 ```bash
-ansible-playbook playbooks/setup_users.yml -e "env=staging"
-ansible-playbook playbooks/install_packages.yml -e "env=staging"
-ansible-playbook playbooks/deploy_validator.yml -e "env=staging"
-ansible-playbook playbooks/deploy_nginx.yml -e "env=staging"
+ansible-playbook playbooks/setup_users.yml -e "env=staging" -e "target_hosts=staging"
+ansible-playbook playbooks/install_packages.yml -e "env=staging" -e "target_hosts=staging"
+ansible-playbook playbooks/deploy_rsyslog.yml -e "env=staging" -e "target_hosts=staging"
+ansible-playbook playbooks/deploy_validator.yml -e "env=staging" -e "target_hosts=staging"
+ansible-playbook playbooks/deploy_nginx.yml -e "env=staging" -e "target_hosts=staging"
 ```
 
 ## Variables Reference
@@ -192,10 +203,23 @@ This section describes all available variables used in the playbooks.
 | `validator_user` | User for validator service | `auth-validator` |
 | `validator_group` | Group for validator service | `auth-validator` |
 | `validator_base_dir` | Base directory for validator service | `/opt/auth-validator` |
-| `validator_log_dir` | Directory for validator logs | `/opt/auth-validator/logs` |
+| `validator_log_dir` | Directory for validator logs | `/var/log/auth-validator` |
 | `python_venv_dir` | Python virtual environment path | `/opt/auth-validator/venv` |
 | `python_command` | Python interpreter command | `/usr/bin/python3` |
-| `service_name` | Name of the validator systemd service | `auth-validator` |
+| `auth_service_name` | Name of the validator systemd service | `auth-validator` |
+
+### Logging Configuration
+
+| Variable | Description | Default Value |
+|----------|-------------|---------------|
+| `use_rsyslog` | Use rsyslog for centralized logging | `true` |
+| `rsyslog_log_dir` | Base directory for rsyslog logs | `/var/log/rsyslog` |
+| `forward_logs_to_remote` | Forward logs to a remote syslog server | `false` |
+| `syslog_server` | Remote syslog server address | `127.0.0.1` |
+| `syslog_port` | Remote syslog server port | `514` |
+| `syslog_protocol` | Protocol for remote logging (udp/tcp) | `udp` |
+| `syslog_facility` | Facility level (0-23) | `1` |
+| `syslog_severity` | Severity level (0-7) | `6` |
 
 ## Testing
 
@@ -206,6 +230,18 @@ curl -X GET https://your-server/mock \
   -H 'Content-Type: application/json' \
   -H 'X-Secret-Header: YOUR_SECRET_VALUE' \
   -k -v
+```
+
+To test the health endpoint:
+
+```bash
+curl -X GET https://your-server/health -k
+```
+
+And to ping the validator service directly:
+
+```bash
+curl -X GET http://127.0.0.1:9000/pong
 ```
 
 ## Security Notes
@@ -219,10 +255,21 @@ curl -X GET https://your-server/mock \
 
 The deployment playbooks automatically restart services when their configuration changes:
 
-- When NGINX configuration files are modified, the NGINX service will be restarted.
-- When Auth Validator configuration or Python code is modified, the validator service will be restarted.
+- When NGINX configuration files are modified, the NGINX service will be restarted via the "restart nginx service" handler.
+- When Auth Validator configuration or Python code is modified, the validator service will be restarted via the "restart validator service" handler.
+- When rsyslog configuration files are modified, the rsyslog service will be restarted.
 
 This ensures that the latest configurations are always active without manual intervention.
+
+## Logging Structure
+
+When rsyslog is enabled, logs are centralized as follows:
+
+- **NGINX Logs**: `/var/log/rsyslog/nginx/<env>_access.log` and `/var/log/rsyslog/nginx/<env>_error.log`
+- **App Protect Logs**: `/var/log/rsyslog/app_protect/app_protect_<env>.log`
+- **Auth Validator Logs**: `/var/log/rsyslog/auth_validator/auth_validator_<env>.log`
+
+If rsyslog is disabled, logs are stored in their default locations.
 
 ### License
 
