@@ -31,10 +31,4 @@ Thumbs.db
 .vscode/
 
 # Credentials and secrets
-*password*
-*secret*
-*credential*
-*aws_access*
-*aws_key*
 *vault*
-
