@@ -52,6 +52,7 @@
         requirements: "{{ validator_base_dir }}/requirements.txt"
         virtualenv: "{{ python_venv_dir }}"
         virtualenv_command: "{{ python_command }} -m venv"
+      environment: "{{ proxy_env | default({}) }}"
 
   roles:
     - validator_service

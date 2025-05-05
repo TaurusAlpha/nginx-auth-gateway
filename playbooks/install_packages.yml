@@ -21,10 +21,8 @@
           ansible.builtin.apt:
             name: rsyslog
             state: present
-
-    - name: Update APT cache
-      ansible.builtin.apt:
-        update_cache: true
+            update_cache: true
+          environment: "{{ proxy_env | default({}) }}"
 
     - name: Install Python packages
       ansible.builtin.apt:
@@ -34,8 +32,11 @@
           - python3-venv
           - python3-apt
         state: present
+        update_cache: true
+      environment: "{{ proxy_env | default({}) }}"
 
     - name: Install prerequisites for NGINX Plus
+      when: nginx_plus | bool
       ansible.builtin.apt:
         name:
           - apt-transport-https
@@ -45,6 +46,8 @@
           - gnupg2
           - ubuntu-keyring
         state: present
+        update_cache: true
+      environment: "{{ proxy_env | default({}) }}"
 
     - name: Install NGINX Plus and App Protect WAF
       when: nginx_plus | bool and nginx_plus_license_key != "" and nginx_plus_license_cert != ""
@@ -64,7 +67,6 @@
             path: "{{ nginx_plus_license_dir }}"
             state: directory
             mode: '0755'
-
 
         - name: Copy NGINX Plus license files
           ansible.builtin.copy:
@@ -93,19 +95,20 @@
             url: https://cs.nginx.com/static/keys/nginx_signing.key
             keyring: /usr/share/keyrings/nginx-archive-keyring.gpg
             state: present
+          environment: "{{ proxy_env | default({}) }}"
 
         - name: NGINX App Protect key
           ansible.builtin.apt_key:
             url: https://cs.nginx.com/static/keys/app-protect-security-updates.key
             keyring: /usr/share/keyrings/nginx-archive-keyring.gpg
             state: present
+          environment: "{{ proxy_env | default({}) }}"
 
         - name: Add NGINX Plus repository
           ansible.builtin.apt_repository:
             repo: >
               deb [signed-by=/usr/share/keyrings/nginx-archive-keyring.gpg]
               https://pkgs.nginx.com/plus/ubuntu {{ ubuntu_codename.stdout }} nginx-plus
-            # repo: "deb https://pkgs.nginx.com/plus/ubuntu {{ ubuntu_codename.stdout }} nginx-plus"
             state: present
             update_cache: false
 
@@ -130,6 +133,7 @@
             url: https://cs.nginx.com/static/files/90pkgs-nginx
             dest: /etc/apt/apt.conf.d/90pkgs-nginx
             mode: '0644'
+          environment: "{{ proxy_env | default({}) }}"
 
         - name: Install NGINX Plus with App Protect WAF
           ansible.builtin.apt:
@@ -138,9 +142,11 @@
               - app-protect
             state: present
             update_cache: true
+          environment: "{{ proxy_env | default({}) }}"
 
     - name: Install open source NGINX
       ansible.builtin.apt:
         name: nginx
         state: present
+      environment: "{{ proxy_env | default({}) }}"
       when: not nginx_plus | bool
