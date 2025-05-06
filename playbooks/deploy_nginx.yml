@@ -17,7 +17,7 @@
       ansible.builtin.apt:
         name: nginx
         state: present
-        environment: "{{ proxy_env | default({}) }}"
+      environment: "{{ proxy_env | default({}) }}"
       when: not nginx_plus | bool
       register: nginx_check
 
@@ -27,7 +27,7 @@
           - nginx-plus
           - app-protect
         state: present
-        environment: "{{ proxy_env | default({}) }}"
+      environment: "{{ proxy_env | default({}) }}"
       when: nginx_plus | bool and nginx_plus_license_key != "" and nginx_plus_license_cert != ""
       register: nginx_plus_check
       ignore_errors: true

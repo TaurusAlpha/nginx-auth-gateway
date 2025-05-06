@@ -14,4 +14,12 @@ backend_servers:
   - "localhost:8081"
 
 # Enable health check in staging
-server_health_check: "true"
+server_health_check: "false"
+
+nginx_plus: true
+# Path to NGINX Plus license key file relative to nginx/license/<hostname>/ 
+nginx_plus_license_key: "nginx-one.key"
+# Path to NGINX Plus license cert file relative to nginx/license/<hostname>/
+nginx_plus_license_cert: "nginx-one.crt"
+# Path to NGINX Plus JWT token file relative to nginx/license/<hostname>/
+nginx_plus_jwt_token: "nginx-one.jwt"

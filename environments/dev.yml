@@ -12,4 +12,4 @@ secret_name: "secret/nginx/auth-validator-dev"
 server_name: "dev-aws-ingress-validator.local"
 
 # Enable health check in development
-server_health_check: "true"
+server_health_check: "false"

@@ -101,7 +101,7 @@ auth_service_name: "auth-validator"
 
 # Logging Configuration
 # Use rsyslog for logging
-use_rsyslog: true
+use_rsyslog: false
 # Rsyslog default log directory
 rsyslog_log_dir: "/var/log/rsyslog"
 # Forward logs to a remote syslog server

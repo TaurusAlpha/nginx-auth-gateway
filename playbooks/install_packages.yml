@@ -16,13 +16,10 @@
   tasks:
     - name: Install rsyslog
       when: use_rsyslog | bool
-      block:
-        - name: Install rsyslog if not already present
-          ansible.builtin.apt:
-            name: rsyslog
-            state: present
-            update_cache: true
-          environment: "{{ proxy_env | default({}) }}"
+      ansible.builtin.apt:
+        name: rsyslog
+        state: present
+      environment: "{{ proxy_env | default({}) }}"
 
     - name: Install Python packages
       ansible.builtin.apt:
@@ -32,7 +29,6 @@
           - python3-venv
           - python3-apt
         state: present
-        update_cache: true
       environment: "{{ proxy_env | default({}) }}"
 
     - name: Install prerequisites for NGINX Plus
@@ -46,7 +42,6 @@
           - gnupg2
           - ubuntu-keyring
         state: present
-        update_cache: true
       environment: "{{ proxy_env | default({}) }}"
 
     - name: Install NGINX Plus and App Protect WAF

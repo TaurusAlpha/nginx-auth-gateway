@@ -64,8 +64,9 @@
   notify: "restart nginx service"
 
 # Block: Generate self-signed certificates
-- block:
+- name: Generate self-signed certificates
   when: create_self_signed_cert == "true"
+  block:
     - name: Generate Root CA key
       ansible.builtin.command: openssl genrsa -out {{ nginx_cert_dir }}/rootCA.key 2048
       args:
@@ -105,9 +106,9 @@
       args:
         creates: "{{ nginx_cert_dir }}/server/{{ server_name }}-fullchain.crt"
 
-# Block: Copy existing certificates
-- block:
+- name: Copy existing certificates
   when: create_self_signed_cert != "true"
+  block:
     - name: Copy existing SSL certificate if not generating self-signed
       ansible.builtin.copy:
         src: "ssl/{{ server_certificate_chain }}"
