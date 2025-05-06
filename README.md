@@ -15,7 +15,8 @@ This project sets up an NGINX API Gateway with a custom authentication validator
 
 ### Prerequisites
 
-- Ansible 2.9+
+- Ansible >= 2.14+
+- Python >= 3.12
 - Target servers with SSH access
 - Target servers with pre-installed packages or internet access
 - NGINX Plus license files (if using NGINX Plus)
