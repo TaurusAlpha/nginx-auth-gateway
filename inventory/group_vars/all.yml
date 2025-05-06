@@ -9,9 +9,9 @@ aws_region: "eu-west-1"
 
 # Environment Configuration
 # Proxy
-proxy_env:
-  http_proxy: "http://10.0.0.138:8080/"
-  https_proxy: "http://10.0.0.138:8080/"
+# proxy_env:
+#   http_proxy: "http://10.0.0.138:8080/"
+#   https_proxy: "http://10.0.0.138:8080/"
 # Environment identifier (prod, staging, dev)
 env: "prod"
 # Enable debug logging in validator service
