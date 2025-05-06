@@ -32,6 +32,14 @@
       register: nginx_plus_check
       ignore_errors: true
 
+    - name: Set permissions for NGINX folder
+      ansible.builtin.file:
+        path: "/etc/nginx"
+        state: directory
+        recurse: true
+        owner: "{{ nginx_user }}"
+        group: "{{ nginx_group }}"
+
     - name: Start validator service
       ansible.builtin.systemd:
         name: "{{ auth_service_name }}.service"
