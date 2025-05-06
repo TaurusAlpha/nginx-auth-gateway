@@ -34,11 +34,6 @@
         group: "{{ validator_group }}"
         mode: "0755"  # Allow write access for logs
 
-    - name: Create virtual environment
-      ansible.builtin.command: "{{ python_command }} -m venv {{ python_venv_dir }}"
-      args:
-        creates: "{{ python_venv_dir }}"
-
     - name: Copy requirements file
       ansible.builtin.copy:
         src: roles/validator_service/requirements.txt
@@ -53,6 +48,14 @@
         virtualenv: "{{ python_venv_dir }}"
         virtualenv_command: "{{ python_command }} -m venv"
       environment: "{{ proxy_env | default({}) }}"
+
+    - name: Set permissions for virtualenv folder
+      ansible.builtin.file:
+        path: "{{ python_venv_dir }}"
+        state: directory
+        recurse: true
+        owner: "{{ validator_user }}"
+        group: "{{ validator_group }}"
 
   roles:
     - validator_service
