@@ -1,7 +1,7 @@
 # Main Process Configuration
-# user is set via systemd override
+user nginx;
 worker_processes auto;
-pid {{ nginx_pid_dir }}/nginx.pid;
+pid /var/run/nginx.pid;
 
 {% if nginx_plus | bool %}
 # Load NGINX App Protect WAF module for NGINX Plus

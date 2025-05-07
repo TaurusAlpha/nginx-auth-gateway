@@ -44,10 +44,6 @@
     - nginx
 
   post_tasks:
-    - name: Reload systemd daemon
-      ansible.builtin.systemd:
-        daemon_reload: true
-
     - name: Verify NGINX service is running
       ansible.builtin.systemd:
         name: nginx

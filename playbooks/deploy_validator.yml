@@ -69,6 +69,7 @@
       ansible.builtin.systemd:
         name: "{{ auth_service_name }}"
         state: started
+        enabled: true
 
     - name: Verify connectivity to validation service
       ansible.builtin.uri:

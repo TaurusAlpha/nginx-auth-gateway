@@ -11,14 +11,6 @@
     - "{{ nginx_app_protect_log_dir }}"
   when: nginx_plus | bool
 
-- name: Create pid directory for nginx
-  ansible.builtin.file:
-    path: "{{ nginx_pid_dir }}"
-    state: directory
-    owner: "{{ nginx_user }}"
-    group: "{{ nginx_group }}"
-    mode: "0755"
-
 - name: Create certificate directory
   ansible.builtin.file:
     path: "{{ nginx_cert_dir }}"
@@ -153,18 +145,6 @@
     mode: "0600"
   with_items: "{{ key_files.files }}"
   register: key_files_perm_result
-
-- name: Create systemd override directory for nginx
-  ansible.builtin.file:
-    path: /etc/systemd/system/nginx.service.d
-    state: directory
-    mode: "0755"
-
-- name: Create systemd override file for nginx
-  ansible.builtin.template:
-    src: nginx_override.j2
-    dest: /etc/systemd/system/nginx.service.d/override.conf
-    mode: "0644"
 
 - name: Copy App Protect policy file
   ansible.builtin.copy:

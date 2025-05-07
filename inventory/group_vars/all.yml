@@ -79,8 +79,6 @@ validator_base_dir: "/opt/auth-validator"
 validator_log_dir: "/var/log/auth-validator"
 # Directory for SSL certificates
 nginx_cert_dir: "/etc/nginx/certs"
-# Directory for NGINX PID file
-nginx_pid_dir: "/run/nginx"
 # Directory for NGINX Plus license files
 nginx_plus_license_dir: "/etc/ssl/nginx"
 # Directory for NGINX Plus logs
@@ -101,7 +99,7 @@ auth_service_name: "auth-validator"
 
 # Logging Configuration
 # Use rsyslog for logging
-use_rsyslog: false
+use_rsyslog: true
 # Rsyslog default log directory
 rsyslog_log_dir: "/var/log/rsyslog"
 # Forward logs to a remote syslog server

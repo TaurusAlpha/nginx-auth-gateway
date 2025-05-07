@@ -181,7 +181,6 @@ This section describes all available variables used in the playbooks.
 | `nginx_user` | User for NGINX processes | `nginx` |
 | `nginx_group` | Group for NGINX processes | `nginx` |
 | `nginx_cert_dir` | Directory for SSL certificates | `/etc/nginx/certs` |
-| `nginx_pid_dir` | Directory for NGINX PID file | `/run/nginx` |
 
 ### Backend Configuration
 
