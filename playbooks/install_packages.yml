@@ -29,6 +29,7 @@
           - python3-venv
           - python3-apt
         state: present
+        update_cache: true
       environment: "{{ proxy_env | default({}) }}"
 
     - name: Install prerequisites for NGINX Plus
@@ -95,7 +96,7 @@
         - name: NGINX App Protect key
           ansible.builtin.apt_key:
             url: https://cs.nginx.com/static/keys/app-protect-security-updates.key
-            keyring: /usr/share/keyrings/nginx-archive-keyring.gpg
+            keyring: /usr/share/keyrings/app-protect-security-updates.gpg
             state: present
           environment: "{{ proxy_env | default({}) }}"
 
@@ -104,6 +105,7 @@
             repo: >
               deb [signed-by=/usr/share/keyrings/nginx-archive-keyring.gpg]
               https://pkgs.nginx.com/plus/ubuntu {{ ubuntu_codename.stdout }} nginx-plus
+            filename: nginx-plus
             state: present
             update_cache: false
 
@@ -112,14 +114,16 @@
             repo: >
               deb [signed-by=/usr/share/keyrings/nginx-archive-keyring.gpg]
               https://pkgs.nginx.com/app-protect/ubuntu {{ ubuntu_codename.stdout }} nginx-plus
+            filename: nginx-app-protect
             state: present
             update_cache: false
 
         - name: Add App Protect security updates repository
           ansible.builtin.apt_repository:
             repo: >
-              deb [signed-by=/usr/share/keyrings/nginx-archive-keyring.gpg]
+              deb [signed-by=/usr/share/keyrings/app-protect-security-updates.gpg]
               https://pkgs.nginx.com/app-protect-security-updates/ubuntu {{ ubuntu_codename.stdout }} nginx-plus
+            filename: app-protect-security-updates
             state: present
             update_cache: false
 

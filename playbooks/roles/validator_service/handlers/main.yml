@@ -4,5 +4,4 @@
     name: "{{ auth_service_name }}"
     state: restarted
   become: true
-  become_user: "{{ validator_user }}"
   listen: "restart validator service"

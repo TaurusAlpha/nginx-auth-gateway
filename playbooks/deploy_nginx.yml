@@ -40,20 +40,6 @@
         owner: "{{ nginx_user }}"
         group: "{{ nginx_group }}"
 
-    - name: Start validator service
-      ansible.builtin.systemd:
-        name: "{{ auth_service_name }}.service"
-        state: started
-      tags: [always]
-
-    - name: Verify connectivity to validation service
-      ansible.builtin.uri:
-        url: http://127.0.0.1:9000/pong
-        method: GET
-        status_code: 200
-      register: validator_check
-      ignore_errors: true
-
     - name: Display pre-deployment status
       ansible.builtin.debug:
         msg: >
