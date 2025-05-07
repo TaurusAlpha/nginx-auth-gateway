@@ -11,14 +11,6 @@
     - "{{ nginx_app_protect_log_dir }}"
   when: nginx_plus | bool
 
-- name: Ensure NGINX log directory is owned by nginx user
-  ansible.builtin.file:
-    path: "{{ nginx_log_dir | default('/var/log/nginx') }}"
-    state: directory
-    owner: "{{ nginx_user }}"
-    group: "{{ nginx_group }}"
-    mode: "0755"
-
 - name: Create pid directory for nginx
   ansible.builtin.file:
     path: "{{ nginx_pid_dir }}"
@@ -127,7 +119,7 @@
         mode: "0600"
       register: copy_key_result
 
-- name: Set permissions and ownership for SSL certificate files
+- name: Get SSL certificate files
   ansible.builtin.find:
     paths: "{{ nginx_cert_dir }}"
     recurse: true
@@ -145,11 +137,12 @@
   with_items: "{{ cert_files.files }}"
   register: cert_files_perm_result
 
-- name: Set restrictive permissions for private key files
+- name: Get private key files
   ansible.builtin.find:
     paths: "{{ nginx_cert_dir }}"
     patterns: "*.key"
     recurse: true
+    file_type: file
   register: key_files
 
 - name: Apply restrictive permissions to private key files
@@ -181,16 +174,6 @@
     group: "{{ nginx_group }}"
     mode: "0644"
   when: nginx_plus | bool
-
-- name: Reload systemd daemon
-  ansible.builtin.systemd:
-    daemon_reload: true
-
-- name: Start and enable NGINX service
-  ansible.builtin.systemd:
-    name: nginx
-    state: started
-    enabled: true
 
 # Check if any certificate-related task made changes and restart NGINX if needed
 - name: Check certificate changes and notify handler

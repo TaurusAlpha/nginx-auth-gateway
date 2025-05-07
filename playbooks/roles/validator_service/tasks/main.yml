@@ -23,13 +23,3 @@
     dest: "/etc/systemd/system/{{ auth_service_name }}.service"
     mode: "0644"
   notify: "restart validator service"
-
-- name: Reload systemd daemon
-  ansible.builtin.systemd:
-    daemon_reload: true
-
-- name: Enable and start Flask service
-  ansible.builtin.systemd:
-    name: "{{ auth_service_name }}.service"
-    enabled: true
-    state: started

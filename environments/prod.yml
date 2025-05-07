@@ -3,7 +3,7 @@
 env: "prod"
 
 # Auth Validator environment variables
-secret_name: "secret/nginx/auth-validator"
+secret_name: "auth-validator"
 
 # NGINX Plus Configuration
 # Override default to use NGINX Plus

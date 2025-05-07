@@ -61,11 +61,14 @@
     - validator_service
 
   post_tasks:
+    - name: Reload systemd daemon
+      ansible.builtin.systemd:
+        daemon_reload: true
+
     - name: Verify Flask service is running
       ansible.builtin.systemd:
         name: "{{ auth_service_name }}"
         state: started
-      register: flask_service_status
 
     - name: Verify connectivity to validation service
       ansible.builtin.uri:
