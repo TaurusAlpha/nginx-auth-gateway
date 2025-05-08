@@ -3,7 +3,8 @@
 env: "staging"
 
 # Auth Validator environment variables
-secret_name: "secret/nginx/auth-validator-staging"
+secret_name: "auth-validator-staging"
+secret_header_name: "X-Auth-Validator"
 
 # Server specific configuration
 server_name: "staging-aws-ingress-validator.local"

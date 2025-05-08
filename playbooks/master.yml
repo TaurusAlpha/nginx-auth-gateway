@@ -20,11 +20,6 @@
   ansible.builtin.import_playbook: setup_users.yml
   tags: [users, setup, always]
 
-- name: Import rsyslog playbook
-  when: use_rsyslog | bool
-  ansible.builtin.import_playbook: deploy_rsyslog.yml
-  tags: [rsyslog, logging]
-
 - name: Import Deploy Validator playbook
   ansible.builtin.import_playbook: deploy_validator.yml
   tags: [validator, application]
@@ -32,3 +27,8 @@
 - name: Import Deploy NGINX playbook
   ansible.builtin.import_playbook: deploy_nginx.yml
   tags: [nginx, web]
+
+- name: Import rsyslog playbook
+  when: use_rsyslog | bool
+  ansible.builtin.import_playbook: deploy_rsyslog.yml
+  tags: [rsyslog, logging]

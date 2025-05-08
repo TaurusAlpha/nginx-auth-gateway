@@ -14,25 +14,20 @@
         msg: "Deploying to {{ env | default('prod') }} environment on {{ inventory_hostname }}"
       tags: [always]
 
-    - name: Display selected environment
-      ansible.builtin.debug:
-        msg: "Deploying to {{ env | default('prod') }} environment on {{ inventory_hostname }}"
-      tags: [always]
-
     - name: Ensure rsyslog is installed
       ansible.builtin.package:
         name: rsyslog
         state: present
 
   roles:
-    - role: rsyslog
-      tags: [rsyslog, logging, configuration]
+    - rsyslog
 
   post_tasks:
     - name: Verify rsyslog service is running
       ansible.builtin.systemd:
         name: rsyslog
         state: started
+        enabled: true
       register: rsyslog_running
 
     - name: Display deployment status

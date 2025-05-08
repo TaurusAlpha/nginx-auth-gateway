@@ -16,12 +16,13 @@ aws_region: "eu-west-1"
 env: "prod"
 # Enable debug logging in validator service
 debug: "false"
-# AWS Secret Manager secret name for auth validator
-secret_name: "secret/nginx/auth-validator"
+# AWS Secret Manager secret alias name and header name for auth validator
+secret_name: "auth-validator"
+secret_header_name: "X-Auth-Validator"
 
 # NGINX Installation Configuration
 # Set to true to install NGINX Plus instead of open-source NGINX
-nginx_plus: false
+nginx_plus: true
 # Path to NGINX Plus license key file relative to nginx/license/<hostname>/ 
 nginx_plus_license_key: ""
 # Path to NGINX Plus license cert file relative to nginx/license/<hostname>/
