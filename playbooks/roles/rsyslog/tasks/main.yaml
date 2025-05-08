@@ -1,13 +1,4 @@
 ---
-- name: Deploy main rsyslog configuration
-  ansible.builtin.template:
-    src: rsyslog.conf.j2
-    dest: /etc/rsyslog.conf
-    owner: root
-    group: root
-    mode: '0644'
-  notify: Restart rsyslog
-
 - name: Deploy NGINX specific rsyslog configuration
   ansible.builtin.template:
     src: nginx.conf.j2
