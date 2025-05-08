@@ -91,6 +91,61 @@ http {
     # gzip_http_version 1.1;
     # gzip_types text/plain text/css application/json application/javascript text/xml application/xml application/xml+rss text/javascript;
 
+    {% if nginx_plus | bool %}
+    # NGINX Plus Status Dashboard Configuration
+    server {
+        listen 8080;
+        server_name {{ server_name }}.status;
+        status_zone dashboard;
+        
+        # Access control for status dashboard
+        {% if status_allow_cidrs is defined %}
+        # Restrict access to specified networks only
+        {% for cidr in status_allow_cidrs %}
+        allow {{ cidr }};
+        {% endfor %}
+        deny all;
+        {% else %}
+        # Default allows access from any IP - WARNING: This is not recommended for production
+        allow all;
+        {% endif %}
+
+        # Status dashboard configuration
+        location = /dashboard.html {
+            root /usr/share/nginx/html;
+            # Dashboard-specific CSP that allows necessary resources
+            add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self'" always;
+        }
+
+        # API endpoint for status data
+        location /api/ {
+            api;
+            # Enables additional metrics
+            status_zone status_api;
+            # Exclude dashboard requests from rate limiting
+            limit_req_zone=off;
+            limit_conn_zone=off;
+        }
+
+        # Redirect root to dashboard
+        location = / {
+            return 301 /dashboard.html;
+        }
+
+        # Enable basic authentication for write operations across all API versions
+        location ~ ^/api/\d+/ {
+            limit_except GET {
+                auth_basic "NGINX Plus API";
+                auth_basic_user_file /etc/nginx/.htpasswd;
+            }
+            api write=on;
+            # Exclude dashboard requests from rate limiting
+            limit_req_zone=off;
+            limit_conn_zone=off;
+        }
+    }
+    {% endif %}
+
     # Virtual Host Configuration
     include /etc/nginx/conf.d/*.conf;
     # include /etc/nginx/sites-enabled/*;
