@@ -204,8 +204,6 @@ This section describes all available variables used in the playbooks.
 | `validator_group` | Group for validator service | `auth-validator` |
 | `validator_base_dir` | Base directory for validator service | `/opt/auth-validator` |
 | `validator_log_dir` | Directory for validator logs | `/var/log/auth-validator` |
-| `python_venv_dir` | Python virtual environment path | `/opt/auth-validator/venv` |
-| `python_command` | Python interpreter command | `/usr/bin/python3` |
 | `auth_service_name` | Name of the validator systemd service | `auth-validator` |
 
 ### Logging Configuration

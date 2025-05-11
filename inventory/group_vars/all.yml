@@ -87,13 +87,6 @@ nginx_log_dir: "/var/log/nginx"
 # Directory for NGINX App Protect logs
 nginx_app_protect_log_dir: "/var/log/app_protect"
 
-
-# Python Configuration
-# Python virtual environment path
-python_venv_dir: "{{ validator_base_dir }}/venv"
-# Python interpreter command
-python_command: "/usr/bin/python3"
-
 # Service Names
 # Name of the validator systemd service
 auth_service_name: "auth-validator"

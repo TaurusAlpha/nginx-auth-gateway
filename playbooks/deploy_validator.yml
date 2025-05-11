@@ -45,13 +45,13 @@
     - name: Install Flask and boto3 in venv
       ansible.builtin.pip:
         requirements: "{{ validator_base_dir }}/requirements.txt"
-        virtualenv: "{{ python_venv_dir }}"
-        virtualenv_command: "{{ python_command }} -m venv"
+        virtualenv: "{{ validator_base_dir }}/venv"
+        virtualenv_command: "{{ discovered_interpreter_python }} -m venv"
       environment: "{{ proxy_env | default({}) }}"
 
     - name: Set permissions for virtualenv folder
       ansible.builtin.file:
-        path: "{{ python_venv_dir }}"
+        path: "{{ validator_base_dir }}/venv"
         state: directory
         recurse: true
         owner: "{{ validator_user }}"
