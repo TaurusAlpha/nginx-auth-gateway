@@ -5,40 +5,50 @@
 template(name="nginx-access-template" type="string" string="%msg%\n")
 template(name="nginx-error-template" type="string" string="%timestamp% [%syslogseverity-text%] %msg%\n")
 
-# Templates for dynamic file paths
-template(name="nginx-access-file" type="string" string="{{ rsyslog_log_dir }}/nginx/{{ env }}_access.log")
-template(name="nginx-error-file" type="string" string="{{ rsyslog_log_dir }}/nginx/{{ env }}_error.log")
+# Input for NGINX access logs
+input(type="imfile"
+      File="{{ nginx_log_dir | default('/var/log/nginx') }}/{{ env }}_access.log"
+      Tag="nginx_access:"
+      Severity="{{ syslog_severity | default('6') }}"
+      Facility="{{ syslog_facility | default('1') }}")
 
-# Process NGINX access logs
-if $programname startswith 'nginx_access' then {
-    # Write to local file
-    action(type="omfile"
-           dynaFile="nginx-access-file"
-           template="nginx-access-template")
-    
-    {% if forward_logs_to_remote | bool %}
-    # Forward to remote syslog server
+# Input for NGINX error logs
+input(type="imfile"
+      File="{{ nginx_log_dir | default('/var/log/nginx') }}/{{ env }}_error.log"
+      Tag="nginx_error:"
+      Severity="{{ syslog_severity | default('6') }}"
+      Facility="{{ syslog_facility | default('1') }}")
+
+{% if forward_logs_to_remote | bool %}
+# Route NGINX access logs
+if $programname == 'nginx_access' then {
     action(type="omfwd"
            target="{{ syslog_server }}"
            port="{{ syslog_port }}"
            protocol="{{ syslog_protocol }}"
-           template="nginx-access-template")
-    {% endif %}
+           template="nginx-access-template"
+           {% if syslog_protocol == 'tcp' %}
+           TCP_Framing="octet-counted"
+           {% endif %}
+           action.resumeRetryCount="-1"
+           queue.type="linkedList"
+           queue.size="10000")
+    stop
 }
 
-# Process NGINX error logs
-if $programname startswith 'nginx_error' then {
-    # Write to local file
-    action(type="omfile"
-           dynaFile="nginx-error-file"
-           template="nginx-error-template")
-    
-    {% if forward_logs_to_remote | bool %}
-    # Forward to remote syslog server
+# Route NGINX error logs
+if $programname == 'nginx_error' then {
     action(type="omfwd"
            target="{{ syslog_server }}"
            port="{{ syslog_port }}"
            protocol="{{ syslog_protocol }}"
-           template="nginx-error-template")
-    {% endif %}
+           template="nginx-error-template"
+           {% if syslog_protocol == 'tcp' %}
+           TCP_Framing="octet-counted"
+           {% endif %}
+           action.resumeRetryCount="-1"
+           queue.type="linkedList"
+           queue.size="10000")
+    stop
 }
+{% endif %}

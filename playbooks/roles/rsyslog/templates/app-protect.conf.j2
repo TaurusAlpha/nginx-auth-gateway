@@ -1,28 +1,30 @@
 # NGINX App Protect Rsyslog Configuration
 # File: /etc/rsyslog.d/app-protect.conf
 
-# Set templates for App Protect logs
+# Template for log formatting
 template(name="app-protect-template" type="string" string="%timestamp% %msg%\n")
 
-# Create dynamic file paths
-template(name="app-protect-file" type="string" string="{{ rsyslog_log_dir }}/app_protect/app_protect_{{ env }}.log")
+# Input for NGINX App Protect logs (file-based)
+input(type="imfile"
+      File="{{ nginx_app_protect_log_dir }}/security.log"
+      Tag="nginx_app_protect_security:"
+      Severity="{{ syslog_severity | default('6') }}"
+      Facility="{{ syslog_facility | default('1') }}")
 
-# Filter and process NGINX App Protect logs
-if $programname startswith 'nginx_app_protect' then {
-    # Local file storage with proper formatting
-    action(type="omfile"
-           dynaFile="app-protect-file"
-           template="app-protect-template")
-    
-    {% if forward_logs_to_remote | bool %}
-    # Forward to remote syslog server if enabled
+{% if forward_logs_to_remote | bool %}
+# Forward App Protect logs to remote syslog server
+if $programname == 'nginx_app_protect_security' then {
     action(type="omfwd"
            target="{{ syslog_server }}"
            port="{{ syslog_port }}"
            protocol="{{ syslog_protocol }}"
-           template="app-protect-template")
-    {% endif %}
-    
-    # Stop processing this message after handling
+           template="app-protect-template"
+           {% if syslog_protocol == 'tcp' %}
+           TCP_Framing="octet-counted"
+           {% endif %}
+           action.resumeRetryCount="-1"
+           queue.type="linkedList"
+           queue.size="10000")
     stop
 }
+{% endif %}

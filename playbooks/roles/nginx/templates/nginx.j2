@@ -50,15 +50,9 @@ http {
     '$upstream_cache_status $upstream_addr '
     '"$http_authorization" "$request_body"';
 
-    {% if use_rsyslog | bool %}
-    # When rsyslog is enabled, send logs syslog
-    access_log syslog:server=localhost:514,facility=local{{ syslog_facility }},tag=nginx_access api_gateway;
-    error_log syslog:server=localhost:514,facility=local{{ syslog_facility }},tag=nginx_error info;
-    {% else %}
     # Standard file logging
-    access_log {{ nginx_log_dir if nginx_plus | bool else '/var/log/nginx' }}/{{ env }}_access.log api_gateway;
-    error_log {{ nginx_log_dir if nginx_plus | bool else '/var/log/nginx' }}/{{ env }}_error.log info;
-    {% endif %}
+    access_log {{ nginx_log_dir | default('/var/log/nginx') }}/{{ env }}_access.log api_gateway;
+    error_log {{ nginx_log_dir | default('/var/log/nginx') }}/{{ env }}_error.log {{ 'debug' if debug | bool else 'info' }};
 
     # Proxy Settings
     proxy_http_version 1.1;
@@ -83,13 +77,6 @@ http {
 
     # Compression Settings
     gzip on;
-
-    # gzip_vary on;
-    # gzip_proxied any;
-    # gzip_comp_level 6;
-    # gzip_buffers 16 8k;
-    # gzip_http_version 1.1;
-    # gzip_types text/plain text/css application/json application/javascript text/xml application/xml application/xml+rss text/javascript;
 
     {% if nginx_plus | bool %}
     # NGINX Plus Status Dashboard Configuration
@@ -117,31 +104,19 @@ http {
             add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self'" always;
         }
 
-        # API endpoint for status data
-        location /api/ {
-            api;
-            # Enables additional metrics
-            status_zone status_api;
-            # Exclude dashboard requests from rate limiting
-            limit_req_zone=off;
-            limit_conn_zone=off;
-        }
-
         # Redirect root to dashboard
         location = / {
             return 301 /dashboard.html;
         }
 
         # Enable basic authentication for write operations across all API versions
-        location ~ ^/api/\d+/ {
+        location = /api {
             limit_except GET {
                 auth_basic "NGINX Plus API";
                 auth_basic_user_file /etc/nginx/.htpasswd;
             }
             api write=on;
             # Exclude dashboard requests from rate limiting
-            limit_req_zone=off;
-            limit_conn_zone=off;
         }
     }
     {% endif %}
@@ -167,9 +142,9 @@ http {
     add_header X-Environment "{{ env }}" always;
 
     # Rate Limiting Configuration
-    limit_req_zone $binary_remote_addr zone=api:10m rate=10r/s;
+    limit_req_zone $binary_remote_addr zone=api:1m rate=1000r/s;
     limit_req_status 429;
-    limit_conn_zone $binary_remote_addr zone=apiconn:10m;
+    limit_conn_zone $binary_remote_addr zone=apiconn:1m;
 
     # Default Rate Limiting Settings
     limit_req zone=api burst=20 nodelay;
