@@ -1,4 +1,4 @@
-from flask import Flask, request, Response, abort
+from flask import Flask, request, Response
 import boto3
 import json
 import os
@@ -30,9 +30,6 @@ logger.info("Auth validation service initialized")
 SECRET_NAME = os.environ.get("SECRET_NAME", "X-Secret-Header")
 REGION_NAME = os.environ.get("AWS_REGION", "eu-west-1")
 logger.info(f"Using secret name: {SECRET_NAME} in region: {REGION_NAME}")
-
-# Limit allowed HTTP methods
-ALLOWED_METHODS = {"GET", "HEAD"}
 
 
 def unescape_json_string(s):
@@ -97,7 +94,7 @@ def pong():
     return Response("Pong", status=200)
 
 
-@app.route("/validate", methods=["GET", "HEAD"])
+@app.route("/validate", methods=["GET"])
 def validate():
     if DEBUG:
         logger.debug(f"Validation request received from {request.remote_addr}")
