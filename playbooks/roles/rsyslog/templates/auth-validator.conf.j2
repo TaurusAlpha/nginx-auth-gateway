@@ -4,35 +4,51 @@
 # Template for log formatting
 template(name="auth-validator-template" type="string" string="%timestamp% %msg%\n")
 
-# Template for dynamic file paths
-template(name="auth-validator-file" type="string" string="{{ rsyslog_log_dir }}/auth_validator/auth_validator_{{ env }}.log")
-
 # Input file configuration for auth-validator logs
 input(type="imfile"
       File="{{ validator_log_dir }}/stdout.log"
       Tag="auth_validator_stdout"
-      Severity="info"
-      Facility="local1")
+      Severity="{{ syslog_severity | default('6') }}"
+      Facility="{{ syslog_facility | default('1') }}")
 
 input(type="imfile"
       File="{{ validator_log_dir }}/stderr.log"
       Tag="auth_validator_stderr"
-      Severity="error"
-      Facility="local1")
+      Severity="{{ syslog_severity | default('6') }}"
+      Facility="{{ syslog_facility | default('1') }}")
 
-# Process auth-validator logs
-if $programname startswith 'auth_validator' then {
-    # Write to local file
-    action(type="omfile"
-           dynaFile="auth-validator-file"
-           template="auth-validator-template")
-    
-    {% if forward_logs_to_remote | bool %}
-    # Forward to remote syslog server
+{% if forward_logs_to_remote | bool %}
+# Forward Auth Validator error logs to remote syslog server
+if $programname == 'auth_validator_stderr' then {
     action(type="omfwd"
            target="{{ syslog_server }}"
            port="{{ syslog_port }}"
            protocol="{{ syslog_protocol }}"
-           template="auth-validator-template")
-    {% endif %}
+           template="auth-validator-template"
+           {% if syslog_protocol == 'tcp' %}
+           TCP_Framing="octet-counted"
+           {% endif %}
+           action.resumeRetryCount="-1"
+           queue.type="linkedList"
+           queue.size="10000")
+    stop
 }
+{% endif %}
+
+{% if forward_logs_to_remote | bool %}
+# Forward Auth Validator access logs to remote syslog server
+if $programname == 'auth_validator_stdout' then {
+    action(type="omfwd"
+           target="{{ syslog_server }}"
+           port="{{ syslog_port }}"
+           protocol="{{ syslog_protocol }}"
+           template="auth-validator-template"
+           {% if syslog_protocol == 'tcp' %}
+           TCP_Framing="octet-counted"
+           {% endif %}
+           action.resumeRetryCount="-1"
+           queue.type="linkedList"
+           queue.size="10000")
+    stop
+}
+{% endif %}
