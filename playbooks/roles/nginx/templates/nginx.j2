@@ -14,6 +14,16 @@ events {
     # multi_accept on;
 }
 
+{% if proxy_env is defined %}
+mgmt {
+    {% if proxy_env.http_proxy is defined %}
+    proxy {{ proxy_env.http_proxy | regex_replace('http://([^/]+)/.*', '\\1') }}; #extracted IP:PORT from http_proxy
+    {% elif proxy_env.https_proxy is defined %}
+    proxy {{ proxy_env.https_proxy | regex_replace('https://([^/]+)/.*', '\\1') }}; #extracted IP:PORT from https_proxy
+    {% endif %}
+}
+{% endif %}
+
 http {
     # Basic Settings
     sendfile on;
@@ -21,7 +31,6 @@ http {
     types_hash_max_size 2048;
     server_tokens off;
 
-    # server_names_hash_bucket_size 64;
     # server_name_in_redirect off;
 
     include /etc/nginx/mime.types;
@@ -104,11 +113,6 @@ http {
             add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self'" always;
         }
 
-        # Redirect root to dashboard
-        location = / {
-            return 301 /dashboard.html;
-        }
-
         # Enable basic authentication for write operations across all API versions
         location = /api {
             limit_except GET {
@@ -117,6 +121,11 @@ http {
             }
             api write=on;
             # Exclude dashboard requests from rate limiting
+        }
+
+        # Redirect root to dashboard
+        location = / {
+            return 301 /dashboard.html;
         }
     }
     {% endif %}
