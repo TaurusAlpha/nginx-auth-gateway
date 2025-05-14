@@ -18,8 +18,6 @@ PORT = 9000
 # Configure logging
 handler = logging.StreamHandler(sys.stdout)
 formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
-handler.setFormatter(formatter)
-handler.flush = lambda: sys.stdout.flush()  # Force immediate flush
 
 logger = logging.getLogger("validator")
 logger.setLevel(logging.DEBUG if DEBUG else logging.INFO)

@@ -1,7 +1,7 @@
 ---
 - name: Copy Flask app script
   ansible.builtin.copy:
-    src: auth_validator.py
+    src: auth_validator_v2.py
     dest: "{{ validator_base_dir }}/auth_validator.py"
     owner: "{{ validator_user }}"
     group: "{{ validator_group }}"

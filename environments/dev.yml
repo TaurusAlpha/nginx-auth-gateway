@@ -1,6 +1,6 @@
 ---
 # Environment name for logging and identification
-env: "development"
+env: "dev"
 
 # Auth Validator environment variables
 # Enable debug mode for development
