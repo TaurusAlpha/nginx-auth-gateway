@@ -8,14 +8,14 @@ template(name="nginx-error-template" type="string" string="%timestamp% [%syslogs
 # Input for NGINX access logs
 input(type="imfile"
       File="{{ nginx_log_dir | default('/var/log/nginx') }}/{{ env }}_access.log"
-      Tag="nginx_access:"
+      Tag="nginx_access"
       Severity="{{ syslog_severity | default('6') }}"
       Facility="{{ syslog_facility | default('1') }}")
 
 # Input for NGINX error logs
 input(type="imfile"
       File="{{ nginx_log_dir | default('/var/log/nginx') }}/{{ env }}_error.log"
-      Tag="nginx_error:"
+      Tag="nginx_error"
       Severity="{{ syslog_severity | default('6') }}"
       Facility="{{ syslog_facility | default('1') }}")
 
